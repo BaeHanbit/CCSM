@@ -1,0 +1,3 @@
+﻿  category.cpp
+c:\users\haun2\source\repos\ccsm\ccsm\category.cpp(280): warning C4715: '__remove_category': 모든 제어 경로에서 값을 반환하지는 않습니다.
+  CCSM.vcxproj -> C:\Users\haun2\source\repos\CCSM\Debug\CCSM.exe
