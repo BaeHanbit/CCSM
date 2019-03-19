@@ -46,6 +46,16 @@ void Category::__set_reset_date(std::string day)
 	_reset_date = day;
 }
 
+std::string Category::__get_name()
+{
+	return _name;
+}
+
+void Category::__set_name(std::string & temp_name)
+{
+	_name = temp_name;
+}
+
 ///-----------------------------------------------------------------------------------------------
 /*
 	[ Function Act ]
@@ -248,6 +258,16 @@ const int __remove_category()
 		std::cout << "No Category has founded" << std::endl;
 		return -1;
 	}
+}
+
+/*
+	[ Function Act ]
+		rename and input new reset date.
+*/
+void __fix_category(Category* temp, std::string name, std::string reset_date)
+{
+	temp->__set_name(name);
+	temp->__set_reset_date(reset_date);
 }
 
 /*

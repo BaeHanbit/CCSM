@@ -14,6 +14,7 @@ class Category;
 const Category* __find_category(std::string name);
 const int __create_category();
 const int __remove_category();
+void __fix_category(Category* temp, std::string name, int reset_date);
 const int __check_category_overlap(std::string name);
 const int __check_category_reset(Category* temp);
 const int __reset_cate_date(Category* temp);
@@ -35,6 +36,9 @@ public:
 
 	std::string __get_reset_date();
 	void __set_reset_date(std::string day);
+
+	std::string __get_name();
+	void __set_name(std::string & temp_name);
 
 public:
 	void __add_income(const int & money, const std::string & text, const std::string & time);
