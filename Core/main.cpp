@@ -13,7 +13,7 @@ int main()
 	do
 	{
 		std::cout << std::endl << std::endl;
-		std::cout<<"[1. Create Category | 2. Remove Category | 3. Category Counts | 4.set_calender]\nInput : ";
+		std::cout<<"[1. Create Category | 2. Remove Category | 3. Test | 4.set_calender]\nInput : ";
 		std::cin >> menu;
 		system("cls");
 		switch (menu)

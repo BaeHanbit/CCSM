@@ -18,6 +18,7 @@ const int __check_category_overlap(std::string name);
 const int __check_category_reset(Category* temp);
 const int __reset_cate_date(Category* temp);
 const int __remake_reset_flag(Category* temp);
+const int __get_amount_of_category(Category* temp, std::string start_date, std::string end_date, int flag);
 
 class Category
 {
@@ -36,8 +37,8 @@ public:
 	void __set_reset_date(std::string day);
 
 public:
-	const int __income(const int & money, const std::string & text, const std::string & time);
-	const int __expense(const int &money, const std::string & text, const std::string & time);
+	void __add_income(const int & money, const std::string & text, const std::string & time);
+	void __add_expense(const int &money, const std::string & text, const std::string & time);
 	const std::string __validate_date();
 	const int __get_total_income();
 	const int __get_total_expense();
@@ -45,20 +46,12 @@ public:
 
 private:
 	int _money;
-	std::string _name;//must not be overlaped
+	std::string _name;
 
-	bool _flag_reset;//1 need to reset
+	bool _flag_reset;
 	std::string _reset_date;
 	std::string _next_reset_date;
 
-
-	int _income_index;
-	std::map<int,int> _income;//해당 카테고리 수입
-	std::map<int,std::string>_income_text;
-	std::map<int,std::string>_income_time;
-	
-	int _expense_index;
-	std::map<int,int>_expense;//카테고리 지출
-	std::map<int,std::string> _expense_text;
-	std::map<int,std::string>_expense_time;
+	std::map<int,std::pair<int,std::pair<std::string,std::string>>>_income;
+	std::map<int, std::pair<int, std::pair<std::string, std::string>>>_expense;
 };

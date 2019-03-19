@@ -5,13 +5,11 @@
 std::list<std::pair<Category*,std::string>>cate_ptrs;
 
 Category::Category(const std::string& name, const std::string & reset_date)
-	:_income(),_expense(),_income_text(),_income_time(),_expense_text(),_expense_time()
+	:_income(),_expense()
 {
 	_money = 0;
 	_name = name;
 	_reset_date = reset_date;
-	_income_index = 0;
-	_expense_index = 0;
 }
 Category::~Category()
 {
@@ -50,37 +48,27 @@ void Category::__set_reset_date(std::string day)
 
 ///-----------------------------------------------------------------------------------------------
 /*
-	[return value]
-	0 : No problem
-
-	[what function does]
+	[ Function Act ]
 	add income to money member.
 	record income
 */
-const int Category::__income(const int & money, const std::string & text, const std::string & time)
+void Category::__add_income(const int & money, const std::string & text, const std::string & time)
 {
-	_income.insert(std::pair<int,int>(_income_index, money));
-	_income_text.insert(std::pair<int,std::string>(_income_index, text));
-	_income_time.insert(std::make_pair(_income_index, time));
+	int index = _income.size();
+	_income[index] = std::make_pair(money, std::make_pair(text, time));
 	_money += money;
-	return 0;
 }
 
 /*
-	[return value]
-	0 : No problem
-
-	[what function does]
-	subtract expense to money member.
-	record expense
+	[ Function Act ]
+		record expense
+		subtract expense to money member.
 */
-const int Category::__expense(const int &money, const std::string & text, const std::string & time)
+void Category::__add_expense(const int &money, const std::string & text, const std::string & time)
 {
-	_expense.insert(std::make_pair(_expense_index, money));
-	_expense_text.insert(std::make_pair(_expense_index,text));
-	_expense_time[_expense_index] = time;
+	int index = _expense.size();
+	_expense[index] = std::make_pair(money, std::make_pair(text, time));
 	_money -= money;
-	return 0;
 }
 
 /*
@@ -164,23 +152,6 @@ const std::string Category::__validate_date()
 	}//end of if
 }
 
-/*
-	[return value]
-	int : total of expense since last reset date
-
-	[what function does]
-	caclute and return the total value of income sice last reset_date.
-*/
-const int Category::__get_total_income()
-{
-	int total = 0;
-	for (std::map<int, int>::iterator iter = _income.begin();
-		iter != _income.end(); iter++)
-	{
-		total += iter->second;
-	}
-	return total;
-}
 ///-------------------------------------------------------------------------------------------------
 /*
 	[return value]
@@ -403,4 +374,25 @@ const int __remake_reset_flag(Category* temp)
 	std::string today = __make_perfect_date(year, mon, day);
 
 	return -1;
+}
+
+const int __get_amount_of_category(Category* temp, std::string start_date, std::string end_date, int flag)
+{
+
+	if (flag == 1)
+	{
+		
+	}
+	else if (flag == 2)
+	{
+
+	}
+	else if (flag == 3)
+	{
+
+	}
+	else
+	{
+		return -1;
+	}
 }
