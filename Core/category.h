@@ -11,15 +11,17 @@
 
 class Category;
 
-const Category* __find_category(std::string name);
+Category* __find_category(std::string name);
 const int __create_category();
 const int __remove_category();
-void __fix_category(Category* temp, std::string name, int reset_date);
+int __fix_category(Category* temp, std::string name, std::string reset_date);
+void __remove_category_record(Category* temp, int index, bool type);
 const int __check_category_overlap(std::string name);
 const int __check_category_reset(Category* temp);
 const int __reset_cate_date(Category* temp);
 const int __remake_reset_flag(Category* temp);
 const int __get_amount_of_category(Category* temp, std::string start_date, std::string end_date, int flag);
+
 
 class Category
 {
@@ -28,27 +30,11 @@ public:
 	~Category();
 
 public:
-	const std::string __get_next_reset_date();
-	void __set_next_reset_date(std::string temp_date);
-
-	bool __get_flag_reset();
-	void __set_flag_reset(bool A);
-
-	std::string __get_reset_date();
-	void __set_reset_date(std::string day);
-
-	std::string __get_name();
-	void __set_name(std::string & temp_name);
-
-public:
 	void __add_income(const int & money, const std::string & text, const std::string & time);
 	void __add_expense(const int &money, const std::string & text, const std::string & time);
 	const std::string __validate_date();
-	const int __get_total_income();
-	const int __get_total_expense();
 
-
-private:
+public:
 	int _money;
 	std::string _name;
 
@@ -56,6 +42,13 @@ private:
 	std::string _reset_date;
 	std::string _next_reset_date;
 
-	std::map<int,std::pair<int,std::pair<std::string,std::string>>>_income;
-	std::map<int, std::pair<int, std::pair<std::string, std::string>>>_expense;
+	int _max_income_serial_number;
+	std::map<int, int>_income_money;
+	std::map<int, std::string> _income_text;
+	std::map<int, std::string>_income_time;
+	
+	int _max_expense_serial_number;
+	std::map<int, int>_expense_money;
+	std::map<int, std::string>_expense_text;
+	std::map<int, std::string>_expense_time;
 };

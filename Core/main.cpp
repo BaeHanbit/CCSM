@@ -4,6 +4,8 @@
 
 enum menu{CREATE_CATEGORY=0,REMOVE_CATEGORY,CATEGORY_COUNT};
 extern std::list<std::pair<Category*, std::string>>cate_ptrs;
+extern std::vector<Day*> day_ptrs;
+
 int main()
 {
 	int menu = 0;

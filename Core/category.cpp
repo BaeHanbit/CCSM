@@ -5,55 +5,18 @@
 std::list<std::pair<Category*,std::string>>cate_ptrs;
 
 Category::Category(const std::string& name, const std::string & reset_date)
-	:_income(),_expense()
+	:_income_money(), _income_text(), _income_time(), _expense_money(), _expense_text(), _expense_time()
 {
 	_money = 0;
 	_name = name;
 	_reset_date = reset_date;
+	_max_expense_serial_number = 0;
+	_max_income_serial_number = 0;
 }
+
 Category::~Category()
 {
 
-}
-///-----------------------------------------------------------------------------------------------
-const std::string Category::__get_next_reset_date()
-{
-	return _next_reset_date;
-}
-
-void Category::__set_next_reset_date(std::string temp_date)
-{
-	_next_reset_date = temp_date;
-}
-
-bool Category::__get_flag_reset()
-{
-	return _flag_reset;
-}
-
-void Category::__set_flag_reset(bool A)
-{
-	_flag_reset = A;
-}
-
-std::string Category::__get_reset_date()
-{
-	return _reset_date;
-}
-
-void Category::__set_reset_date(std::string day)
-{
-	_reset_date = day;
-}
-
-std::string Category::__get_name()
-{
-	return _name;
-}
-
-void Category::__set_name(std::string & temp_name)
-{
-	_name = temp_name;
 }
 
 ///-----------------------------------------------------------------------------------------------
@@ -64,9 +27,11 @@ void Category::__set_name(std::string & temp_name)
 */
 void Category::__add_income(const int & money, const std::string & text, const std::string & time)
 {
-	int index = _income.size();
-	_income[index] = std::make_pair(money, std::make_pair(text, time));
-	_money += money;
+	int serial_num = _max_income_serial_number++;
+
+	_income_money[serial_num] = money;
+	_income_text[serial_num] = text;
+	_income_time[serial_num] = time;
 }
 
 /*
@@ -76,9 +41,11 @@ void Category::__add_income(const int & money, const std::string & text, const s
 */
 void Category::__add_expense(const int &money, const std::string & text, const std::string & time)
 {
-	int index = _expense.size();
-	_expense[index] = std::make_pair(money, std::make_pair(text, time));
-	_money -= money;
+	int serial_num = _max_expense_serial_number++;
+
+	_expense_money[serial_num] = money;
+	_expense_text[serial_num] = text;
+	_expense_time[serial_num] = time;
 }
 
 /*
@@ -161,7 +128,6 @@ const std::string Category::__validate_date()
 
 	}//end of if
 }
-
 ///-------------------------------------------------------------------------------------------------
 /*
 	[return value]
@@ -171,7 +137,7 @@ const std::string Category::__validate_date()
 	find category pointer in list.
 	return category pointer.
 */
-const Category* __find_category(std::string name)
+Category* __find_category(std::string name)
 {
 	for (std::list<std::pair<Category*, std::string>>::iterator iter = cate_ptrs.begin();
 		iter != cate_ptrs.end(); iter++)
@@ -261,13 +227,30 @@ const int __remove_category()
 }
 
 /*
+	[ Return Value ]
+		{0} : Normal
+		{-1} : Error Cause same name is already exist
+
 	[ Function Act ]
 		rename and input new reset date.
 */
-void __fix_category(Category* temp, std::string name, std::string reset_date)
+int __fix_category(Category* temp, std::string name, std::string reset_date)
 {
-	temp->__set_name(name);
-	temp->__set_reset_date(reset_date);
+	if (__check_category_overlap(name))
+	{
+		return -1;
+	}
+	else
+	{
+		temp->_name = name;
+		temp->_reset_date = reset_date;
+		return 0;
+	}
+}
+
+void __remove_category_record(Category* temp, int index, bool type)
+{
+
 }
 
 /*
@@ -309,7 +292,7 @@ const int __check_category_reset(Category* temp)
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 
-	if (temp->__get_next_reset_date() == __today_date() && temp->__get_flag_reset() == true)
+	if (temp->_next_reset_date == __today_date() && temp->_flag_reset == true)
 	{
 		return 1;
 	}
@@ -330,9 +313,9 @@ const int __reset_cate_date(Category* temp)
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 
-	std::string reset_date = temp->__get_reset_date();
-	std::string next_reset_date = temp->__get_next_reset_date();
-	bool flag = temp->__get_flag_reset();
+	std::string reset_date = temp->_reset_date;
+	std::string next_reset_date = temp->_next_reset_date;
+	bool flag = temp->_flag_reset;
 
 	int year, mon, day;
 	if (flag == true)
@@ -348,19 +331,19 @@ const int __reset_cate_date(Category* temp)
 			mon = tm.tm_mon + 2;
 		}
 
-		if (std::stoi(temp->__get_reset_date()) > __maximum_day(mon, year))
+		if (std::stoi(temp->_reset_date) > __maximum_day(mon, year))
 		{
 			day = __maximum_day(mon, year);
 		}
 		else
 		{
-			day = std::stoi(temp->__get_reset_date());
+			day = std::stoi(temp->_reset_date);
 		}
 
 		std::string temp_date = __make_perfect_date(year, mon, day);
 
-		temp->__set_next_reset_date(temp_date);
-		temp->__set_flag_reset(false);
+		temp->_next_reset_date=temp_date;
+		temp->_flag_reset = false;
 		return 0;
 	}
 	else
@@ -385,7 +368,7 @@ const int __remake_reset_flag(Category* temp)
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 
-	std::string reset_date = temp->__get_reset_date();
+	std::string reset_date = temp->_reset_date;
 	int year, mon, day;
 	year = tm.tm_year + 1900;
 	mon = tm.tm_mon + 1;
@@ -409,7 +392,7 @@ const int __get_amount_of_category(Category* temp, std::string start_date, std::
 	}
 	else if (flag == 3)
 	{
-
+		//day 객체에 수입, 지출 , 잔액 만들어 놓자.
 	}
 	else
 	{
