@@ -23,52 +23,10 @@ const int __maximum_day(int month, int year)
 		return 28;
 }
 
-std::string __make_perfect_date(int year, int mon, int day)
+
+const int __next_month(int mon)
 {
-	std::string str_year, str_mon, str_day;
-	
-	str_year = std::to_string(year);
-	str_mon = std::to_string(mon);
-	str_day = std::to_string(day);
-
-	if (str_mon.length() == 1)
-	{
-		str_mon.insert(0, "0");
-	}
-	if (str_day.length() == 1)
-	{
-		str_day.insert(0, "0");
-	}
-
-	return std::string(str_year + "-" + str_mon + "-" + str_day);
-}
-
-/*
-	[ Return Value ]
-		{0~6} : Normal
-		{100} : when error has been occured
-
-	[ Function Act ]
-		Return next weekday value
-*/
-weekday __next_weekday(weekday temp_day)
-{
-	if (temp_day == SUNDAY)
-		return MONDAY;
-	else if (temp_day == MONDAY)
-		return TUESDAY;
-	else if (temp_day == TUESDAY)
-		return WEDNESDAY;
-	else if (temp_day == WEDNESDAY)
-		return THURSDAY;
-	else if (temp_day == THURSDAY)
-		return FRIDAY;
-	else if (temp_day == FRIDAY)
-		return SATURDAY;
-	else if (temp_day == SATURDAY)
-		return SUNDAY;
-	else
-		return WEEKDAY_ERROR;
+	return mon + 1 == 12 ? 1 : mon + 2;
 }
 
 /*
@@ -105,6 +63,44 @@ const int __set_calender()
 	return 0;
 }
 
+
+std::string __make_perfect_date(int year, int mon, int day)
+{
+	std::string str_year, str_mon, str_day;
+	
+	str_year = std::to_string(year);
+	str_mon = std::to_string(mon);
+	str_day = std::to_string(day);
+
+	if (str_mon.length() == 1)
+	{
+		str_mon.insert(0, "0");
+	}
+	if (str_day.length() == 1)
+	{
+		str_day.insert(0, "0");
+	}
+
+	return std::string(str_year + "-" + str_mon + "-" + str_day);
+}
+
+/*
+	Parameter
+		day : 날짜
+
+	Return
+		string : 두자리로 고정된 날짜
+*/
+std::string __make_perfect_day(int day)
+{
+	if (day < 10)
+	{
+		return '0' + std::to_string(day);
+	}
+	else
+		return std::to_string(day);
+}
+
 /*
 	[ Return Value]
 		string : today :date
@@ -118,11 +114,6 @@ std::string __today_date()
 	struct tm tm = *localtime(&t);
 
 	return __make_perfect_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
-}
-
-const int __next_month(int mon)
-{
-	return mon + 1 == 12 ? 1 : mon + 2;
 }
 
 /*
@@ -159,5 +150,33 @@ std::string __next_reset_date(int reset_day)
 			return __make_perfect_date(year, next_mon, max_day);
 		}
 	}
+}
+
+/*
+	[ Return Value ]
+		{0~6} : Normal
+		{100} : when error has been occured
+
+	[ Function Act ]
+		Return next weekday value
+*/
+weekday __next_weekday(weekday temp_day)
+{
+	if (temp_day == SUNDAY)
+		return MONDAY;
+	else if (temp_day == MONDAY)
+		return TUESDAY;
+	else if (temp_day == TUESDAY)
+		return WEDNESDAY;
+	else if (temp_day == WEDNESDAY)
+		return THURSDAY;
+	else if (temp_day == THURSDAY)
+		return FRIDAY;
+	else if (temp_day == FRIDAY)
+		return SATURDAY;
+	else if (temp_day == SATURDAY)
+		return SUNDAY;
+	else
+		return WEEKDAY_ERROR;
 }
 

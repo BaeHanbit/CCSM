@@ -103,7 +103,7 @@ const int __create_cate(std::string name, int reset_day)
 		//reset | last | next | flag(0 : 초기화 필요X | 1 : 초기화 필요)
 		std::string file_name = "Category/" + name + ".txt";
 		std::ofstream file(file_name);
-		file << reset_day << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << 0;
+		file << __make_perfect_day(reset_day) << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << 0;
 		return 0;
 	}
 }
