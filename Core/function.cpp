@@ -119,3 +119,45 @@ std::string __today_date()
 
 	return __make_perfect_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 }
+
+const int __next_month(int mon)
+{
+	return mon + 1 == 12 ? 1 : mon + 2;
+}
+
+/*
+	Parameter
+		reset_day : 초기화 날짜
+
+	Return
+		다음 초기화 날짜
+*/
+std::string __next_reset_date(int reset_day)
+{
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+
+
+
+	int next_mon = __next_month(tm.tm_mon);
+	int year = next_mon == 1 ? tm.tm_year + 1901 : tm.tm_year + 1900;
+	int max_day = __maximum_day(next_mon, year);
+
+	if (tm.tm_mday < reset_day)
+	{
+		max_day = __maximum_day(tm.tm_mon + 1, tm.tm_year + 1900);
+		return __make_perfect_date(tm.tm_year + 1900, tm.tm_mon + 1, reset_day > max_day ? max_day : reset_day);
+	}
+	else
+	{
+		if (max_day >= reset_day)
+		{
+			return __make_perfect_date(year, next_mon, reset_day);
+		}
+		else
+		{
+			return __make_perfect_date(year, next_mon, max_day);
+		}
+	}
+}
+
