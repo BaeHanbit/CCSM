@@ -85,6 +85,60 @@ const bool __find_day(int year, int mon, int day)
 }
 
 /*
+	Return
+		-1 : 에러 : 파일 존재
+		0 : 정상
+*/
+const int __create_master_cate()
+{
+	std::string location = "./MasterCategory.txt";
+	if (__check_file_exist(location))
+	{
+		return -1;
+	}
+	else
+	{
+		std::ofstream wFile(location);
+		return 0;
+	}
+}
+
+/*
+	Return
+		카테고리 개수 
+*/
+const int __cate_cnt()
+{
+	std::string location = "MasterCategory.txt";
+	std::ifstream master_cate(location,std::ios::in | std::ios::out);
+	char temp[100] = { 0 };
+
+	int cnt = 0;
+	while (!master_cate.eof())
+	{
+		master_cate.getline(temp, 100);
+		cnt++;
+	}
+	return cnt-1;
+}
+
+void __get_cate_names(std::string* temp)
+{
+	std::string location = "MasterCategory.txt";
+	std::ifstream file(location, std::ios::in | std::ios::out);
+	char temp_c_str[42] = { 0 };
+
+	file.seekg(0, std::ios::beg);
+	
+	for (int i = 0; i < __cate_cnt(); i++)
+	{
+		file.getline(temp_c_str, 41);
+		std::string _temp(temp_c_str);
+		temp[i] = _temp;
+	}
+}
+
+/*
 	Parameter
 		name : 카테고리 이름
 
@@ -103,7 +157,15 @@ const int __create_cate(std::string name, int reset_day)
 		//reset | last | next | flag(0 : 초기화 필요X | 1 : 초기화 필요)
 		std::string file_name = "Category/" + name + ".txt";
 		std::ofstream file(file_name);
-		file << __make_perfect_day(reset_day) << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << 0;
+		int flag = 0;
+		int index = 0;
+		file << __make_perfect_day(reset_day) << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << flag << '|' << index << std::endl;
+		file.close();
+
+		std::ofstream master_file("MasterCategory.txt",std::ios::in|std::ios::out);
+		master_file.seekp(0, std::ios::end);
+		master_file << name << std::endl;
+		master_file.close();
 		return 0;
 	}
 }
@@ -127,6 +189,61 @@ const bool __find_cate(std::string name)
 	{
 		return 0;
 	}
+}
+
+/*
+	Parameter
+		name : 카테고리 이름
+		cost : 금액
+		text : 메모
+		time : 시간
+		type : 수입, 지출 (0 : 수입 | 1 : 지출)
+*/
+void __add_record_cate(std::string name, int cost, std::string text, std::string time, bool type)
+{
+	std::string location = "./Category/" + name + ".txt";
+	std::ofstream wFile(location, std::ios::in|std::ios::out);
+	std::ifstream rFile(location, std::ios::in);
+
+	std::string temp;
+	std::string max_index_temp;
+	std::getline(rFile, temp);
+
+	for (int i = 27; i < temp.length(); i++)
+	{
+		max_index_temp += temp[i];
+	}
+	int index = std::stoi(max_index_temp) + 1;
+
+	wFile.seekp(27, std::ios::beg);
+	wFile << index;
+
+	char symbol = type == INCOME ? '+' : '-';
+
+	std::string().swap(temp);
+	temp = std::to_string(index) + '|' + symbol;
+	temp += std::to_string(cost) + '|' + time + '|' + text;
+
+	wFile.seekp(0, std::ios::end);
+	wFile << temp << std::endl;
+}
+
+/*
+	Parameter
+		name : 카테고리 이름
+		flag : 리셋 여부의 flag{0: 초기화 X | 1: 초기화}
+*/
+const bool __set_flag(std::string name, bool flag)
+{			
+	std::string location = "./Category/" + name + ".txt";
+	//또한, ios::app 모드로 파일을 열었을 경우 seekp() 함수가 먹히지 않습니다.
+	//당장은 이동을 하지만, 출력을 할 경우 다시 파일 끝에서부터 출력합니다.
+	std::ofstream file(location,std::ios::in | std::ios::out);
+	
+	file.seekp(25, std::ios::beg);
+	file << flag;
+
+	return flag;
 }
 
 /*
