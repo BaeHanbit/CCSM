@@ -35,6 +35,8 @@ const bool __find_dir(std::string name)
 	return access(name.c_str(), 00) == 0 ? 1 : 0;
 }
 
+//-----------------------------------------------------------------------------------//
+
 /*
 	[ Return Value ]
 		{-1} : failed to create day : same day have already exist
@@ -84,6 +86,8 @@ const bool __find_day(int year, int mon, int day)
 	}
 }
 
+//-----------------------------------------------------------------------------------//
+
 /*
 	Return
 		-1 : 에러 : 파일 존재
@@ -122,6 +126,10 @@ const int __cate_cnt()
 	return cnt-1;
 }
 
+/*
+	Parameter
+		temp : 입력 받은 string 배열에 이름들을 넣어준다.
+*/
 void __get_cate_names(std::string* temp)
 {
 	std::string location = "MasterCategory.txt";
@@ -168,6 +176,57 @@ const int __create_cate(std::string name, int reset_day)
 		master_file.close();
 		return 0;
 	}
+}
+
+/*
+	Function Act
+		1. 실제 카테고리 파일 삭제
+		2. MasterCategory 파일에서 해당 카테고리 이름 부분 삭제
+*/
+void __remove_cate(std::string name)
+{
+	std::string location = "./Category/" + name + ".txt";
+	std::remove(location.c_str());
+
+	location = "./MasterCategory.txt";
+
+	FILE *fp = fopen(location.c_str(), "a+");
+
+	std::list<std::string> cate_list;
+	std::list<std::string>::iterator list_iter;
+
+	int index_where = -1;
+	int file_size = 0;
+
+	rewind(fp);
+	for (int i = 0; i < __cate_cnt(); i++)
+	{
+		int temp_file_size = ftell(fp);
+		char temp_buffer[30];
+		fgets(temp_buffer, 30, fp);
+		std::string buffer(temp_buffer);
+
+		if (index_where != -1)
+		{
+			cate_list.push_back(buffer);
+		}
+
+		if (buffer == name + "\n")
+		{
+			file_size = temp_file_size;
+			index_where = i;
+		}
+	}
+
+	chsize(fileno(fp),file_size);
+
+	fseek(fp, 0, SEEK_END);
+
+	for (list_iter = cate_list.begin(); list_iter != cate_list.end(); list_iter++)
+	{
+		fputs(list_iter->c_str(), fp);
+	}
+	fclose(fp);
 }
 
 /*
@@ -227,6 +286,8 @@ void __add_record_cate(std::string name, int cost, std::string text, std::string
 	wFile.seekp(0, std::ios::end);
 	wFile << temp << std::endl;
 }
+
+//-----------------------------------------------------------------------------------//
 
 /*
 	Parameter
