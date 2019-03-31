@@ -103,6 +103,7 @@ const int __create_master_cate()
 	else
 	{
 		std::ofstream wFile(location);
+		wFile << 0 << std::endl;
 		return 0;
 	}
 }
@@ -123,7 +124,7 @@ const int __cate_cnt()
 		master_cate.getline(temp, 100);
 		cnt++;
 	}
-	return cnt-1;
+	return cnt-2;
 }
 
 /*
@@ -167,7 +168,7 @@ const int __create_cate(std::string name, int reset_day)
 		std::ofstream file(file_name);
 		int flag = 0;
 		int index = 0;
-		file << __make_perfect_day(reset_day) << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << flag << '|' << index << std::endl;
+		file << __make_perfect_day(reset_day) << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << flag << std::endl;
 		file.close();
 
 		std::ofstream master_file("MasterCategory.txt",std::ios::in|std::ios::out);
@@ -197,8 +198,11 @@ void __remove_cate(std::string name)
 
 	int index_where = -1;
 	int file_size = 0;
-
+	char temp_for_index[20];
+	
 	rewind(fp);
+	fgets(temp_for_index, 20, fp);
+
 	for (int i = 0; i < __cate_cnt(); i++)
 	{
 		int temp_file_size = ftell(fp);
@@ -261,30 +265,29 @@ const bool __find_cate(std::string name)
 void __add_record_cate(std::string name, int cost, std::string text, std::string time, bool type)
 {
 	std::string location = "./Category/" + name + ".txt";
+	std::string master_location = "./MasterCategory.txt";
 	std::ofstream wFile(location, std::ios::in|std::ios::out);
 	std::ifstream rFile(location, std::ios::in);
-
-	std::string temp;
-	std::string max_index_temp;
-	std::getline(rFile, temp);
-
-	for (int i = 27; i < temp.length(); i++)
-	{
-		max_index_temp += temp[i];
-	}
-	int index = std::stoi(max_index_temp) + 1;
-
-	wFile.seekp(27, std::ios::beg);
-	wFile << index;
-
+	std::ofstream wFile_master(master_location, std::ios::in | std::ios::out);
+	std::ifstream rFile_master(master_location, std::ios::in);
+	
+	std::string index;
+	std::getline(rFile_master, index);
 	char symbol = type == INCOME ? '+' : '-';
 
-	std::string().swap(temp);
-	temp = std::to_string(index) + '|' + symbol;
-	temp += std::to_string(cost) + '|' + time + '|' + text;
+	std::string content;
+	content = index + '|' + symbol;
+	content += std::to_string(cost) + '|' + time + '|' + text;
 
 	wFile.seekp(0, std::ios::end);
-	wFile << temp << std::endl;
+	wFile << content << std::endl;
+	wFile.close();
+
+	int temp_index = std::stoi(index) + 1;
+	index = std::to_string(temp_index);
+	wFile_master.seekp(0, std::ios::beg);
+	wFile_master << index << std::endl;
+	wFile_master.close();
 }
 
 //-----------------------------------------------------------------------------------//

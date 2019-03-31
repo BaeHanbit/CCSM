@@ -20,13 +20,14 @@ const bool __find_dir(std::string name);
 
 const int __create_day(int year, int mon, int day);
 const bool __find_day(int year, int mon, int day);
+void add_record_day();
 
 const int __create_master_cate();
 const int __cate_cnt();
-void __get_cate_names(std::string*);
 const int __create_cate(std::string name, int reset_day);
-void __remove_cate(std::string name);
 const bool __find_cate(std::string name);
+void __remove_cate(std::string name);
+void __get_cate_names(std::string*);
 void __add_record_cate(std::string name, int cost, std::string text, std::string time, bool type);
 
 
