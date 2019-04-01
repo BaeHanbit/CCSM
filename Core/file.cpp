@@ -86,6 +86,28 @@ const bool __find_day(int year, int mon, int day)
 	}
 }
 
+/*
+	Parameter
+		cate : 카테고리 이름
+		text : 메모
+		time : 시간
+		date : 날짜
+		type : 수입 지출
+		index : 카테고리와 연동되는 고유 인덱스
+*/
+void __add_record_day(std::string cate, int  cost, std::string text, std::string date, bool type, int index)
+{
+	std::string location = "./Day/" + date + ".txt";
+	std::ofstream wFile(location, std::ios::in | std::ios::out);
+	wFile.seekp(0, std::ios::end);
+
+	char symbol = type == INCOME ? '+' : '-';
+	std::string content = std::to_string(index) + '|' + symbol;
+	content += std::to_string(cost) + '|' + __current_time() + '|' + text + '|' + cate;
+	
+	wFile << content << std::endl;
+}
+
 //-----------------------------------------------------------------------------------//
 
 /*
@@ -270,11 +292,12 @@ void __add_record_cate(std::string name, int cost, std::string text, std::string
 	std::ifstream rFile(location, std::ios::in);
 	std::ofstream wFile_master(master_location, std::ios::in | std::ios::out);
 	std::ifstream rFile_master(master_location, std::ios::in);
-	
 	std::string index;
-	std::getline(rFile_master, index);
-	char symbol = type == INCOME ? '+' : '-';
 
+	rFile.seekg(0, std::ios::beg);
+	std::getline(rFile_master, index);
+
+	char symbol = type == INCOME ? '+' : '-';
 	std::string content;
 	content = index + '|' + symbol;
 	content += std::to_string(cost) + '|' + time + '|' + text;
@@ -286,10 +309,79 @@ void __add_record_cate(std::string name, int cost, std::string text, std::string
 	int temp_index = std::stoi(index) + 1;
 	index = std::to_string(temp_index);
 	wFile_master.seekp(0, std::ios::beg);
-	wFile_master << index << std::endl;
+	wFile_master << index;
 	wFile_master.close();
 }
 
+/*
+	Parameter
+		buffer : 데이터 저장 공간
+		cate_name : 카테고리 이름
+		cnt 가져올 데이터 행 개수
+		start_point : 데이터를 읽기 시작할 위치
+*/
+void __get_cate_data(std::string* buffer, std::string cate_name, int cnt, int start_point)
+{
+	std::string location = "./Category/" + cate_name + ".txt";
+	std::ifstream rFile(location, std::ios::in);
+	std::string temp_buffer;
+
+	rFile.seekg(0, std::ios::beg);
+	for (int i = 0; i < start_point; i++)
+	{
+		std::getline(rFile, temp_buffer);
+	}
+	for (int i = 0; i < cnt; i++)
+	{
+		if (rFile.eof())
+		{
+			break;
+		}
+			
+		std::getline(rFile, buffer[i]);
+	}
+}
+
+/*
+	Parameter
+		cate : 삭제할 기록이 포함된 카테고리
+		index 삭제할 기록의 고유 넘버
+*/
+void __remove_record_cate(std::string cate, int index)
+{
+	std::string location = "./Category/" + cate + ".txt";
+	FILE *fp = fopen(location.c_str(), "a+");
+	std::vector<std::string> record_buffer;
+	char buffer[100];
+	int file_size = 0;
+	int flag = false;
+
+
+	while (!feof(fp))
+	{
+		int temp_size = ftell(fp);
+		fgets(buffer, 50, fp);
+		if (flag)
+		{
+			record_buffer.push_back(std::string(buffer));
+		}
+		else if (__get_num_from_string(buffer) == index)
+		{
+			file_size = temp_size;
+			flag = true;
+		}
+	}
+
+	chsize(fileno(fp), file_size);
+	fseek(fp, 0, SEEK_END);
+	
+	for (int i = 0; i < record_buffer.size(); i++)
+	{
+		fputs(record_buffer[i].c_str(), fp);
+	}
+
+	fclose(fp);
+}
 //-----------------------------------------------------------------------------------//
 
 /*

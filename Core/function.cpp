@@ -63,6 +63,44 @@ const int __set_calender()
 	return 0;
 }
 
+/*
+	Parameter
+		buffer : 검사할 버퍼
+
+	Return
+		가장 처음의 인덱스 부터 X번쨰 인덱스까지 중, 시작 인덱스에서 끊어지지 않고
+		만들어 질수 있는 가장 큰 수
+*/
+const int __get_num_from_string( char* buffer)
+{
+	int cnt = 0;
+	char* temp_buffer = NULL;
+
+	for (int i = 0; i < strlen(buffer); i++)
+	{
+		if (buffer[i] < 48 || buffer[i]>57)
+		{
+			cnt = i;
+			temp_buffer = new char[cnt+1];
+			break;
+		}
+	}
+
+	for (int i = 0; i < cnt; i++)
+	{
+		temp_buffer[i] = buffer[i];
+	}
+	temp_buffer[cnt] = '\0';
+
+	int num = 0;
+	for (int i = strlen(temp_buffer)-1, times = 1; i >= 0; i--, times *= 10)
+	{
+		num+= (temp_buffer[i] - 48)*times;
+	}
+
+	delete[] temp_buffer;
+	return num;
+}
 
 std::string __make_perfect_date(int year, int mon, int day)
 {
@@ -150,6 +188,17 @@ std::string __next_reset_date(int reset_day)
 			return __make_perfect_date(year, next_mon, max_day);
 		}
 	}
+}
+
+std::string __current_time()
+{
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+
+	std::string min = std::to_string(tm.tm_min);
+	std::string hour = std::to_string(tm.tm_hour);
+
+	return hour + '-' + min;
 }
 
 /*
