@@ -1,7 +1,22 @@
 #include "file.h"
 #include "function.h"
 
-
+/*
+	해당 파일 존재하면 1
+	없으면 0 리턴
+*/
+const bool __File_exist(std::string location)
+{
+	std::ifstream f(location.c_str());
+	if (f.good()) {
+		f.close();
+		return true;
+	}
+	else {
+		f.close();
+		return false;
+	}
+}
 /*
 	해당 카테고리가 존재하는지 확인합니다.
 */
@@ -36,16 +51,17 @@ void __Create_category(std::string name, int reset_date)
 
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
-	std::string file_name = CATEGORY + name + "/" + std::to_string(tm.tm_year + 1900) + '-' + __make_perfect_month(tm.tm_mon + 1);
 
-	//Category month file 양식 : Total Income | Total Expense | Balace
+	std::string file_name = CATEGORY + name + "/" + std::to_string(tm.tm_year + 1900) + '-' + __make_perfect_month(tm.tm_mon + 1);
 	__Create_txt_file(file_name);
 	__Create_txt_file(MASTER + name);
 
 	file_name += ".txt";
 	std::ofstream wFile(file_name, std::ios::in | std::ios::out);
 	wFile.seekp(0, std::ios::beg);
-	std::string content = "0|0|0";
+
+	//Category month file 양식 : Total Income | Total Expense
+	std::string content = "0|0";
 	wFile << content << std::endl;
 
 	std::string master_file = MASTER + name + ".txt";
@@ -61,7 +77,14 @@ void __Create_category(std::string name, int reset_date)
 void __Create_txt_file(std::string name)
 {
 	std::string file_name = name + ".txt";
-	std::ofstream file(file_name);
+	if (__File_exist(file_name))
+	{
+		return;
+	}
+	else
+	{
+		std::ofstream make_file(file_name);
+	}
 }
 /*
 	해당 카테고리 폴더를 지웁니다.
@@ -148,25 +171,67 @@ int __Get_all_file(std::string* buffer, std::string location)
 
 	return cnt;
 }
-
+/*
+	해당 카테고리에 수입,지출 기록을 추가한다	
+*/
 void __Insert_cate_data(std::string category_name, std::string time, std::string memo, int cost, bool type)
 {
 	std::string today = __today_date();
-	today = today[0] + today[1] + today[2] + today[3] + today[4] + today[5] + today[6];
+	today = today.substr(0, 7);
 	std::string location = CATEGORY + category_name + "/" + today;
 
-	__Create_txt_file(location);
+	if (__File_exist(location + ".txt")){}
+	else
+	{
+		__Create_txt_file(location);
+		std::ofstream wFile(location + ".txt");
+		wFile << "0|0" << std::endl;
+		wFile.close();
+	}
+
+
 	location += ".txt";
 	std::ofstream wFile(location, std::ios::in | std::ios::out);
+
 	int index = __Get_index();
 	__Set_index(++index);
+
+	char symbol = type == INCOME ? '+' : '-';
+	//content 양식 : index | time | memo | type+cost
+	std::string content = std::to_string(index) + "|" + time + "|" + memo + "|" + symbol + std::to_string(cost);
+
+	wFile.seekp(0, std::ios::end);
+	wFile << content << std::endl;
+	wFile.seekp(0, std::ios::beg);
+	
+	//Category month file 양식 : Total Income | Total Expense
+	if (type == INCOME)
+	{
+		int temp = __Get_total_income(category_name, today);
+		__Set_total_income(category_name, today, temp += cost);
+	}
+	else
+	{
+		int temp = __Get_total_expense(category_name, today);
+		__Set_total_expense(category_name, today, temp += cost);
+	}
+
+	wFile.close();
 }
 
 void __Create_index_file()
 {
-	__Create_txt_file("./Index");
-	std::ofstream wFile("./Index.txt", std::ios::in || std::ios::out);
-	wFile << 0;
+	std::string location = "./Index.txt";
+	if (__File_exist(location))
+	{
+		return;
+	}
+	else
+	{
+		__Create_txt_file("Index");
+		std::ofstream wFile("./Index.txt", std::ios::in || std::ios::out);
+		wFile << std::to_string(0);
+	}
 }
 int __Get_index()
 {
@@ -181,6 +246,122 @@ void __Set_index(int index)
 	wFile.seekp(0, std::ios::beg);
 	wFile << index;
 }
+
+/*
+	카테고리에 해당하는 달의 총 수입을 리턴한다.
+*/
+int __Get_total_income(std::string category_name, std::string which_month)
+{
+	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
+	std::ifstream rFile(location);
+	std::string income;
+	std::getline(rFile, income);
+	
+	for (int i = 0; i < income.length(); i++)
+	{
+		if (income[i] == '|')
+		{
+			income = income.substr(0, i + 1);
+			break;
+		}
+	}
+	return std::stoi(income);
+}
+/*
+	카테고리의 해당 월의 총 수입 값을 입력한다.
+*/
+void __Set_total_income(std::string category_name, std::string which_month, int cost)
+{
+	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
+	std::ofstream wFile(location, std::ios::in | std::ios::out);
+	std::ifstream rFile(location);
+	std::string buffer;
+	std::string expense;
+
+	std::getline(rFile, buffer);
+
+	for (int i = 0; i < buffer.length(); i++)
+	{
+		if (buffer[i] == '|')
+		{
+			expense = buffer.substr(i + 1, buffer.length() - (i + 1));
+		}
+		else
+		{
+			continue;
+		}
+	}
+
+	int len = buffer.length();
+
+	std::string content = std::to_string(cost) + "|" + expense;
+	while (content.length() < buffer.length())
+	{
+		content += ' ';
+	}
+
+	wFile.seekp(0, std::ios::beg);
+	wFile << content << std::endl;
+}
+/*
+	카테고리의 해당 월의 총 지출을 출력한다.
+*/
+int __Get_total_expense(std::string category_name, std::string which_month)
+{
+	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
+	std::ifstream rFile(location);
+	std::string expense;
+	std::getline(rFile, expense);
+
+	for (int i = 0; i < expense.length(); i++)
+	{
+		if (expense[i] == '|')
+		{
+			expense = expense.substr(i + 1, expense.length() - (i + 1));
+			break;
+		}
+	}
+	return std::stoi(expense);
+}
+/*
+	카테고리의 해당 월 파일의 지출 총합을 설정한다.
+*/
+void __Set_total_expense(std::string category_name, std::string which_month, int cost)
+{
+	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
+	std::ofstream wFile(location, std::ios::in | std::ios::out);
+	std::ifstream rFile(location);
+	std::string buffer;
+	std::string income;
+
+	std::getline(rFile, buffer);
+
+	for (int i = 0; i < buffer.length(); i++)
+	{
+		if (buffer[i] != '|')
+		{
+			income += buffer[i];
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	std::string content = income + "|" + std::to_string(cost);
+	while (content.length() < buffer.length())
+	{
+		content += ' ';
+	}
+
+	wFile.seekp(0, std::ios::beg);
+	wFile << content << std::endl;
+}
+
+
+
+
+
 
 /*
 	[ Return Value ]
@@ -252,9 +433,6 @@ void __add_record_day(std::string cate, int  cost, std::string text, std::string
 	
 	wFile << content << std::endl;
 }
-
-
-
 
 /*
 	Return
@@ -514,7 +692,6 @@ void __remove_record_cate(std::string cate, int index)
 	fclose(fp);
 }
 //-----------------------------------------------------------------------------------//
-
 /*
 	Parameter
 		name : 카테고리 이름
