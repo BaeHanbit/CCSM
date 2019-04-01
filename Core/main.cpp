@@ -2,26 +2,22 @@
 #include "function.h"
 
 enum menu{CREATE_CATEGORY=0,REMOVE_CATEGORY,CATEGORY_COUNT};
-
 void main()
 {
-	std::string buffer[100];
-	std::string date = __today_date();
-	std::string time = __current_time();
+	__Create_index_file();
+	__Create_dir(CATEGORY);
+	
+	__Create_category("식비", 10);
+	__Create_category("교통비", 1);
+	__Create_category("경조사비", 31);
+	//__Remove_category_dir("식비");
+	//__Remove_category_file("식비");
 
-	__create_dir(std::string("Category"));
-	__create_dir(std::string("Day"));
-	__create_master_cate();
-	__create_cate("식비", 1);
-	__create_cate("관리비", 31);
-	__create_day(2019, 3, 31);
+	//std::string temp[100];
+	//int cnt = __Get_all_file(temp,"./Category/식비");
 
-	__add_record_cate("식비", 1000, "팽이버섯", __current_time(), EXPENSE);
-	__add_record_cate("식비", 1000, "팽이버섯", __current_time(), EXPENSE);
-	__add_record_cate("식비", 1000, "팽이버섯", __current_time(), EXPENSE);
-	__add_record_cate("식비", 1000, "팽이버섯", __current_time(), EXPENSE);
-	__add_record_cate("식비", 1000, "팽이버섯", __current_time(), EXPENSE);
-	__add_record_cate("식비", 1000, "팽이버섯", __current_time(), EXPENSE);
-
-	__remove_record_cate("식비", 2);
+	//for (int i = 0; i < cnt; i++)
+	//{
+	//	std::cout << temp[i] << std::endl;
+	//}
 }

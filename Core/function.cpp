@@ -140,6 +140,23 @@ std::string __make_perfect_day(int day)
 }
 
 /*
+	Parameter
+		month : 월
+
+	Return
+		string : 두자리로 고정된 월
+*/
+std::string __make_perfect_month(int mon)
+{
+	if (mon < 10)
+	{
+		return '0' + std::to_string(mon);
+	}
+	else
+		return std::to_string(mon);
+}
+
+/*
 	[ Return Value]
 		string : today :date
 

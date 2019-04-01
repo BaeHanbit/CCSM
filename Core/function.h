@@ -16,6 +16,7 @@ const int __set_calender();
 const int __get_num_from_string( char* buffer);
 std::string __make_perfect_date(int tm_year, int tm_mon, int tm_day);
 std::string __make_perfect_day(int day);
+std::string __make_perfect_month(int mon);
 std::string __today_date();
 std::string __next_reset_date(int reset_day);
 std::string __current_time();
