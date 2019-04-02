@@ -10,13 +10,27 @@ void main()
 	//__Create_category("식비", 10);
 	//__Create_category("교통비", 1);
 	//__Create_category("경조사비", 31);
+	
 
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "팽이 버섯", 800, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "달걀", 5000, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "와!", 800, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "곱창", 30000, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터0", 10, INCOME);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터1", 100, INCOME);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터2", 1000, INCOME);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터3", 10000, INCOME);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터4", 10, INCOME);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터5", 100, INCOME);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "데이터6", 1000, INCOME);
+
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출0", 10, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출1", 100, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출2", 1000, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출3", 10000, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출4", 10, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출5", 100, EXPENSE);
+	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출6", 1000, EXPENSE);
 
 
+
+	//__Set_total_income("식비", "2019-04",12345678);
 	//__Remove_category_dir("식비");
 	//__Remove_category_file("식비");
 

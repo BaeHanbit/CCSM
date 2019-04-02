@@ -61,7 +61,7 @@ void __Create_category(std::string name, int reset_date)
 	wFile.seekp(0, std::ios::beg);
 
 	//Category month file 양식 : Total Income | Total Expense
-	std::string content = "0|0";
+	std::string content = "0|0                      ";
 	wFile << content << std::endl;
 
 	std::string master_file = MASTER + name + ".txt";
@@ -185,7 +185,7 @@ void __Insert_cate_data(std::string category_name, std::string time, std::string
 	{
 		__Create_txt_file(location);
 		std::ofstream wFile(location + ".txt");
-		wFile << "0|0" << std::endl;
+		wFile << "0|0                      " << std::endl;
 		wFile.close();
 	}
 
@@ -208,16 +208,24 @@ void __Insert_cate_data(std::string category_name, std::string time, std::string
 	if (type == INCOME)
 	{
 		int temp = __Get_total_income(category_name, today);
-		__Set_total_income(category_name, today, temp += cost);
+		__Set_total_income(category_name, today, temp+cost);
 	}
 	else
 	{
 		int temp = __Get_total_expense(category_name, today);
-		__Set_total_expense(category_name, today, temp += cost);
+		__Set_total_expense(category_name, today, temp + cost);
 	}
 
 	wFile.close();
 }
+/*
+	
+*/
+void __Remove_cate_data(std::string category_name, int index)
+{
+
+}
+
 
 void __Create_index_file()
 {
@@ -247,6 +255,7 @@ void __Set_index(int index)
 	wFile << index;
 }
 
+
 /*
 	카테고리에 해당하는 달의 총 수입을 리턴한다.
 */
@@ -274,34 +283,57 @@ void __Set_total_income(std::string category_name, std::string which_month, int 
 {
 	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
 	std::ofstream wFile(location, std::ios::in | std::ios::out);
-	std::ifstream rFile(location);
+	std::ifstream rFile(location, std::ios::in);
 	std::string buffer;
 	std::string expense;
+	std::string meta_data;
+	std::vector<std::string> record_list;
+
 
 	std::getline(rFile, buffer);
-
-	for (int i = 0; i < buffer.length(); i++)
+	for (int i = 0; i <=buffer.length(); i++)
 	{
 		if (buffer[i] == '|')
 		{
 			expense = buffer.substr(i + 1, buffer.length() - (i + 1));
-		}
-		else
-		{
-			continue;
+			int temp_expense = std::stoi(expense);
+			expense = std::to_string(temp_expense);
 		}
 	}
 
-	int len = buffer.length();
 
-	std::string content = std::to_string(cost) + "|" + expense;
-	while (content.length() < buffer.length())
+	meta_data = std::to_string(cost) + "|" + expense;
+	if (meta_data.length() <= buffer.length())
 	{
-		content += ' ';
-	}
+		while (meta_data.length() < buffer.length())
+		{
+			meta_data += ' ';
+		}
 
-	wFile.seekp(0, std::ios::beg);
-	wFile << content << std::endl;
+		wFile.seekp(0, std::ios::beg);
+		wFile << meta_data;
+		wFile.close();
+		rFile.close();
+	}
+	else
+	{
+		while (!rFile.eof())
+		{
+			std::getline(rFile, buffer);
+			std::cout << buffer << std::endl;
+			record_list.push_back(buffer);
+		}
+		wFile.close();
+
+		std::ofstream newFile(location, std::ios::out);
+		newFile << meta_data << std::endl;
+		for (int i = 0; i < record_list.size(); i++)
+		{
+			newFile << record_list[i] << std::endl;
+		}
+		newFile.close();
+		rFile.close();
+	}
 }
 /*
 	카테고리의 해당 월의 총 지출을 출력한다.
@@ -330,37 +362,55 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 {
 	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
 	std::ofstream wFile(location, std::ios::in | std::ios::out);
-	std::ifstream rFile(location);
+	std::ifstream rFile(location,std::ios::in);
 	std::string buffer;
 	std::string income;
+	std::string meta_data;
+	std::vector<std::string> record_list;
+
 
 	std::getline(rFile, buffer);
-
-	for (int i = 0; i < buffer.length(); i++)
+	for (int i = 0; buffer[i]!='|'; i++)
 	{
-		if (buffer[i] != '|')
-		{
 			income += buffer[i];
-		}
-		else
-		{
-			break;
-		}
 	}
+	int temp_income = std::stoi(income);
+	income = std::to_string(temp_income);
 
-	std::string content = income + "|" + std::to_string(cost);
-	while (content.length() < buffer.length())
+
+	meta_data = income + "|" + std::to_string(cost);
+	if (meta_data.length() <= buffer.length())
 	{
-		content += ' ';
+		while (meta_data.length() < buffer.length())
+		{
+			meta_data += ' ';
+		}
+
+		wFile.seekp(0, std::ios::beg);
+		wFile << meta_data;
+		wFile.close();
+		rFile.close();
 	}
+	else
+	{
+		while (!rFile.eof())
+		{
+			std::getline(rFile, buffer);
+			std::cout << buffer << std::endl;
+			record_list.push_back(buffer);
+		}
+		wFile.close();
 
-	wFile.seekp(0, std::ios::beg);
-	wFile << content << std::endl;
-}
-
-
-
-
+		std::ofstream newFile(location, std::ios::out);
+		newFile << meta_data << std::endl;
+		for (int i = 0; i < record_list.size(); i++)
+		{
+			newFile << record_list[i] << std::endl;
+		}
+		newFile.close();
+		rFile.close();
+	}
+}	
 
 
 /*
