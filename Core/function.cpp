@@ -71,35 +71,18 @@ const int __set_calender()
 		가장 처음의 인덱스 부터 X번쨰 인덱스까지 중, 시작 인덱스에서 끊어지지 않고
 		만들어 질수 있는 가장 큰 수
 */
-const int __get_num_from_string( char* buffer)
+const int __get_num_from_string(std::string buffer)
 {
-	int cnt = 0;
-	char* temp_buffer = NULL;
-
-	for (int i = 0; i < strlen(buffer); i++)
+	std::string pure_num_string;
+	for (int i = 0; i < buffer.length(); i++)
 	{
 		if (buffer[i] < 48 || buffer[i]>57)
 		{
-			cnt = i;
-			temp_buffer = new char[cnt+1];
 			break;
 		}
+		pure_num_string += buffer[i];
 	}
-
-	for (int i = 0; i < cnt; i++)
-	{
-		temp_buffer[i] = buffer[i];
-	}
-	temp_buffer[cnt] = '\0';
-
-	int num = 0;
-	for (int i = strlen(temp_buffer)-1, times = 1; i >= 0; i--, times *= 10)
-	{
-		num+= (temp_buffer[i] - 48)*times;
-	}
-
-	delete[] temp_buffer;
-	return num;
+	return std::stoi(pure_num_string);
 }
 
 std::string __make_perfect_date(int year, int mon, int day)

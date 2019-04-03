@@ -219,11 +219,65 @@ void __Insert_cate_data(std::string category_name, std::string time, std::string
 	wFile.close();
 }
 /*
-	
+	Return
+		-1 : 해당 인덱스에 해당되는 값 없음
+		해당 인덱스 번호 출력
 */
-void __Remove_cate_data(std::string category_name, int index)
+int __Remove_cate_data(std::string category_name, std::string which_month, int index)
 {
+	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
+	std::ifstream rFile(location, std::ios::in);
+	rFile.seekg(0, std::ios::beg);
+	
 
+	std::vector<std::string> record_list;
+	std::string temp_buffer;
+	int delete_point = 0;
+	int temp_delete_point = 0;
+	bool flag_save = 0;
+	int i = 0;
+	do
+	{
+		if (!flag_save)
+		{
+			temp_delete_point = rFile.tellg();
+		}
+		std::getline(rFile, temp_buffer);
+
+
+		if (flag_save)
+		{
+			record_list.push_back(temp_buffer);
+		}
+		else if (__get_num_from_string(temp_buffer) == index && i != 0)
+		{
+			delete_point = temp_delete_point;
+			flag_save = true;
+		}
+		i++;
+	} while (!rFile.eof());
+	rFile.close();
+
+
+	if (!flag_save)
+	{
+		return -1;
+	}
+	else
+	{
+		FILE *fp = fopen(location.c_str(), "a+");
+		chsize(fileno(fp), delete_point);
+		fclose(fp);
+
+		std::ofstream wFile(location, std::ios::in | std::ios::out);
+		wFile.seekp(0, std::ios::end);
+		for (int i = 0; i < record_list.size(); i++)
+		{
+			wFile << record_list[i] << std::endl;
+		}
+		wFile.close();
+		return index;
+	}
 }
 
 
@@ -435,7 +489,6 @@ const int __create_day(int year, int mon, int day)
 		return 0;
 	}
 }
-
 /*
 	Parameter
 		year : 연도
@@ -461,7 +514,6 @@ const bool __find_day(int year, int mon, int day)
 		return 0;
 	}
 }
-
 /*
 	Parameter
 		cate : 카테고리 이름
@@ -483,265 +535,6 @@ void __add_record_day(std::string cate, int  cost, std::string text, std::string
 	
 	wFile << content << std::endl;
 }
-
-/*
-	Return
-		카테고리 개수 
-*/
-const int __cate_cnt()
-{
-	std::string location = "MasterCategory.txt";
-	std::ifstream master_cate(location,std::ios::in | std::ios::out);
-	char temp[100] = { 0 };
-
-	int cnt = 0;
-	while (!master_cate.eof())
-	{
-		master_cate.getline(temp, 100);
-		cnt++;
-	}
-	return cnt-2;
-}
-
-/*
-	Parameter
-		temp : 입력 받은 string 배열에 이름들을 넣어준다.
-*/
-void __get_cate_names(std::string* temp)
-{
-	std::string location = "MasterCategory.txt";
-	std::ifstream file(location, std::ios::in | std::ios::out);
-	char temp_c_str[42] = { 0 };
-
-	file.seekg(0, std::ios::beg);
-	
-	for (int i = 0; i < __cate_cnt(); i++)
-	{
-		file.getline(temp_c_str, 41);
-		std::string _temp(temp_c_str);
-		temp[i] = _temp;
-	}
-}
-
-/*
-	Parameter
-		name : 카테고리 이름
-
-	Return
-		-1 : 같은 카테고리 존재 실패
-		 0 : 성공
-*/
-const int __create_cate(std::string name, int reset_day)
-{
-	if (__find_cate(name))
-	{
-		return -1;
-	}
-	else
-	{
-		//reset | last | next | flag(0 : 초기화 필요X | 1 : 초기화 필요)
-		std::string file_name = "Category/" + name + ".txt";
-		std::ofstream file(file_name);
-		int flag = 0;
-		int index = 0;
-		file << __make_perfect_day(reset_day) << '|' << __today_date() << '|' << __next_reset_date(reset_day) << '|' << flag << std::endl;
-		file.close();
-
-		std::ofstream master_file("MasterCategory.txt",std::ios::in|std::ios::out);
-		master_file.seekp(0, std::ios::end);
-		master_file << name << std::endl;
-		master_file.close();
-		return 0;
-	}
-}
-
-/*
-	Function Act
-		1. 실제 카테고리 파일 삭제
-		2. MasterCategory 파일에서 해당 카테고리 이름 부분 삭제
-*/
-void __remove_cate(std::string name)
-{
-	std::string location = "./Category/" + name + ".txt";
-	std::remove(location.c_str());
-
-	location = "./MasterCategory.txt";
-
-	FILE *fp = fopen(location.c_str(), "a+");
-
-	std::list<std::string> cate_list;
-	std::list<std::string>::iterator list_iter;
-
-	int index_where = -1;
-	int file_size = 0;
-	char temp_for_index[20];
-	
-	rewind(fp);
-	fgets(temp_for_index, 20, fp);
-
-	for (int i = 0; i < __cate_cnt(); i++)
-	{
-		int temp_file_size = ftell(fp);
-		char temp_buffer[30];
-		fgets(temp_buffer, 30, fp);
-		std::string buffer(temp_buffer);
-
-		if (index_where != -1)
-		{
-			cate_list.push_back(buffer);
-		}
-
-		if (buffer == name + "\n")
-		{
-			file_size = temp_file_size;
-			index_where = i;
-		}
-	}
-
-	chsize(fileno(fp),file_size);
-
-	fseek(fp, 0, SEEK_END);
-
-	for (list_iter = cate_list.begin(); list_iter != cate_list.end(); list_iter++)
-	{
-		fputs(list_iter->c_str(), fp);
-	}
-	fclose(fp);
-}
-
-/*
-	Parameter
-		name : 카테고리 이름
-
-	Return
-		0 : 파일 존재 하지 않음
-		1 : 파일 존재
-*/
-const bool __find_cate(std::string name)
-{
-	std::string file_name = "Category/" + name + ".txt";
-	if (__check_file_exist(file_name))
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-const int __get_cate_total_datas(std::string cate, std::string start_date, std::string end_date, bool type)
-{
-	return 0;
-}
-
-/*
-	Parameter
-		name : 카테고리 이름
-		cost : 금액
-		text : 메모
-		time : 시간
-		type : 수입, 지출 (0 : 수입 | 1 : 지출)
-*/
-void __add_record_cate(std::string name, int cost, std::string text, std::string time, bool type)
-{
-	std::string location = "./Category/" + name + ".txt";
-	std::string master_location = "./MasterCategory.txt";
-	std::ofstream wFile(location, std::ios::in|std::ios::out);
-	std::ifstream rFile(location, std::ios::in);
-	std::ofstream wFile_master(master_location, std::ios::in | std::ios::out);
-	std::ifstream rFile_master(master_location, std::ios::in);
-	std::string index;
-
-	rFile.seekg(0, std::ios::beg);
-	std::getline(rFile_master, index);
-
-	char symbol = type == INCOME ? '+' : '-';
-	std::string content;
-	content = index + '|' + symbol;
-	content += std::to_string(cost) + '|' + time + '|' + text;
-
-	wFile.seekp(0, std::ios::end);
-	wFile << content << std::endl;
-	wFile.close();
-
-	int temp_index = std::stoi(index) + 1;
-	index = std::to_string(temp_index);
-	wFile_master.seekp(0, std::ios::beg);
-	wFile_master << index;
-	wFile_master.close();
-}
-
-/*
-	Parameter
-		buffer : 데이터 저장 공간
-		cate_name : 카테고리 이름
-		cnt 가져올 데이터 행 개수
-		start_point : 데이터를 읽기 시작할 위치
-*/
-void __get_cate_data(std::string* buffer, std::string cate_name, int cnt, int start_point)
-{
-	std::string location = "./Category/" + cate_name + ".txt";
-	std::ifstream rFile(location, std::ios::in);
-	std::string temp_buffer;
-
-	rFile.seekg(0, std::ios::beg);
-	for (int i = 0; i < start_point; i++)
-	{
-		std::getline(rFile, temp_buffer);
-	}
-	for (int i = 0; i < cnt; i++)
-	{
-		if (rFile.eof())
-		{
-			break;
-		}
-			
-		std::getline(rFile, buffer[i]);
-	}
-}
-
-/*
-	Parameter
-		cate : 삭제할 기록이 포함된 카테고리
-		index 삭제할 기록의 고유 넘버
-*/
-void __remove_record_cate(std::string cate, int index)
-{
-	std::string location = "./Category/" + cate + ".txt";
-	FILE *fp = fopen(location.c_str(), "a+");
-	std::vector<std::string> record_buffer;
-	char buffer[100];
-	int file_size = 0;
-	int flag = false;
-
-
-	while (!feof(fp))
-	{
-		int temp_size = ftell(fp);
-		fgets(buffer, 50, fp);
-		if (flag)
-		{
-			record_buffer.push_back(std::string(buffer));
-		}
-		else if (__get_num_from_string(buffer) == index)
-		{
-			file_size = temp_size;
-			flag = true;
-		}
-	}
-
-	chsize(fileno(fp), file_size);
-	fseek(fp, 0, SEEK_END);
-	
-	for (int i = 0; i < record_buffer.size(); i++)
-	{
-		fputs(record_buffer[i].c_str(), fp);
-	}
-
-	fclose(fp);
-}
-//-----------------------------------------------------------------------------------//
 /*
 	Parameter
 		name : 카테고리 이름
@@ -758,27 +551,4 @@ const bool __set_flag(std::string name, bool flag)
 	file << flag;
 
 	return flag;
-}
-
-/*
-	Parameter
-		file_name : 검사 파일 이름
-
-	Return
-		0 : 존재하지 않음
-		1 : 존재
-*/
-const bool __check_file_exist(std::string file_name)
-{
-	std::ifstream file(file_name);
-	if (file.good())
-	{
-		file.close();
-		return true;
-	}
-	else
-	{
-		file.close();
-		return false;
-	}
 }
