@@ -20,7 +20,6 @@ void main()
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입5", 10, INCOME);
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입6", 100, INCOME);
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입7", 1000, INCOME);
-
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출0", 10, EXPENSE);
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출1", 100, EXPENSE);
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출2", 1000, EXPENSE);
@@ -29,17 +28,20 @@ void main()
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출5", 100, EXPENSE);
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출6", 1000, EXPENSE);
 
-	__Remove_cate_data("식비", "2019-04", 5);
 
-	//__Set_total_income("식비", "2019-04",12345678);
+	//std::cout << __Remove_cate_data("식비", "2019-04", 5) << std::endl;
+	//std::cout << __Remove_cate_data("식비", "2019-04", 44) << std::endl;
+
+
 	//__Remove_category_dir("식비");
 	//__Remove_category_file("식비");
 
-	//std::string temp[100];
-	//int cnt = __Get_all_file(temp,"./Category/식비");
 
-	//for (int i = 0; i < cnt; i++)
-	//{
-	//	std::cout << temp[i] << std::endl;
-	//}
+	std::string* temp = new std::string[__Category_month_file_cnt("식비")];
+	int cnt = __Get_all_file(temp,"./Category/식비");
+	for (int i = 0; i < cnt; i++)
+	{
+		std::cout << temp[i] << std::endl;
+	}
+	delete[] temp;
 }

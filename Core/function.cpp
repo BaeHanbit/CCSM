@@ -70,19 +70,30 @@ const int __set_calender()
 	Return
 		가장 처음의 인덱스 부터 X번쨰 인덱스까지 중, 시작 인덱스에서 끊어지지 않고
 		만들어 질수 있는 가장 큰 수
+		-1 : 들어온 버퍼가 빔
 */
 const int __get_num_from_string(std::string buffer)
 {
-	std::string pure_num_string;
-	for (int i = 0; i < buffer.length(); i++)
+	if (buffer.length() == 0)
 	{
-		if (buffer[i] < 48 || buffer[i]>57)
-		{
-			break;
-		}
-		pure_num_string += buffer[i];
+		return -1;
 	}
-	return std::stoi(pure_num_string);
+	else
+	{
+		std::string pure_num_string;
+		for (int i = 0; i < buffer.length(); i++)
+		{
+			if (buffer[i] < 48 || buffer[i]>57)
+			{
+				break;
+			}
+			else
+			{
+				pure_num_string += buffer[i];
+			}
+		}
+		return std::stoi(pure_num_string);
+	}
 }
 
 std::string __make_perfect_date(int year, int mon, int day)

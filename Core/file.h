@@ -34,6 +34,7 @@ void __Create_txt_file(std::string name);
 void __Remove_category_dir(std::string name);
 void __Remove_category_file(std::string name);
 int __Get_all_file(std::string* buffer, std::string location);
+const int __Category_month_file_cnt(std::string category_name);
 void __Insert_cate_data(std::string category_name, std::string time, std::string memo, int cost, bool type);
 int __Remove_cate_data(std::string category_name, std::string which_month, int index);
 

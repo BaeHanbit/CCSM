@@ -17,6 +17,8 @@ const bool __File_exist(std::string location)
 		return false;
 	}
 }
+
+
 /*
 	해당 카테고리가 존재하는지 확인합니다.
 */
@@ -24,6 +26,8 @@ const bool __Find_dir(std::string name)
 {
 	return access(name.c_str(), 00) == 0 ? 1 : 0;
 }
+
+
 /*
 	인자로 받은 이름의 디렉토리를 만듭니다.
 */
@@ -39,6 +43,8 @@ const int __Create_dir(std::string name)
 		return 0;
 	}
 }
+
+
 /*
 	Category 폴더 밑에 자신만의 폴더 생성
 	자신만의 폴더 밑에 만든 달의 파일 생성
@@ -71,6 +77,8 @@ void __Create_category(std::string name, int reset_date)
 	content = __make_perfect_day(reset_date) + '|' + __make_perfect_date(tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
 	wFile2 << content << std::endl;
 }
+
+
 /*
 	인자로 들어온 경로와 이름의 파일 생성
 */
@@ -86,6 +94,8 @@ void __Create_txt_file(std::string name)
 		std::ofstream make_file(file_name);
 	}
 }
+
+
 /*
 	해당 카테고리 폴더를 지웁니다.
 	이때 Master에 자기 자신이 파일이 존재해야 합니다.
@@ -138,6 +148,8 @@ void __Remove_category_dir(std::string name)
 		delete[] buffer;
 	}
 }
+
+
 /*
 	Master폴더 밑에 존재하는 자신의 정보가 들어있는 파일 삭제
 */
@@ -146,8 +158,11 @@ void __Remove_category_file(std::string name)
 	std::string location = MASTER + name + ".txt";
 	std::remove(location.c_str());
 }
+
+
 /*
 	입력 받은 버퍼에, 해당 경로(디렉토리)안의 모든 txt파일 정보를 담아줌
+	이때 버퍼를 배열로 받음으로, 배열 크기를 알아야함
 */
 int __Get_all_file(std::string* buffer, std::string location)
 {
@@ -171,6 +186,29 @@ int __Get_all_file(std::string* buffer, std::string location)
 
 	return cnt;
 }
+
+
+/*
+
+*/
+const int __Category_month_file_cnt(std::string category_name)
+{
+	std::string location = MASTER +category_name + ".txt";
+	std::ifstream rFile(location, std::ios::in);
+	rFile.seekg(0, std::ios::beg);
+
+	std::string buffer;
+	std::getline(rFile, buffer);
+
+	int made_year = std::stoi(buffer.substr(0, 4));
+	int made_month = std::stoi(buffer.substr(5, 2));
+	int today_year = std::stoi(__today_date().substr(0, 4));
+	int today_month = std::stoi(__today_date().substr(5, 2));
+
+	return (today_year - made_year) * 12 + today_month - made_month;
+}
+
+
 /*
 	해당 카테고리에 수입,지출 기록을 추가한다	
 */
@@ -218,6 +256,8 @@ void __Insert_cate_data(std::string category_name, std::string time, std::string
 
 	wFile.close();
 }
+
+
 /*
 	Return
 		-1 : 해당 인덱스에 해당되는 값 없음
@@ -231,35 +271,44 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 	
 
 	std::vector<std::string> record_list;
-	std::string temp_buffer;
+	std::string buffer;
 	int delete_point = 0;
 	int temp_delete_point = 0;
 	bool flag_save = 0;
-	int i = 0;
-	do
+	std::getline(rFile, buffer); //Metadata get
+
+
+	for (int i = 0, buffer_index = 0; !rFile.eof(); i++)
 	{
-		if (!flag_save)
+		if (flag_save==false)
 		{
 			temp_delete_point = rFile.tellg();
 		}
-		std::getline(rFile, temp_buffer);
-
-
-		if (flag_save)
+		std::getline(rFile, buffer);
+		if (flag_save == false)
 		{
-			record_list.push_back(temp_buffer);
+			buffer_index = __get_num_from_string(buffer);
 		}
-		else if (__get_num_from_string(temp_buffer) == index && i != 0)
+
+
+		if (flag_save == true)
+		{
+			record_list.push_back(buffer);
+		}
+		else if (buffer_index == index)
 		{
 			delete_point = temp_delete_point;
 			flag_save = true;
 		}
-		i++;
-	} while (!rFile.eof());
+		else if (i == 0 && buffer_index > index)
+		{
+			return -1;
+		}
+	}
 	rFile.close();
 
 
-	if (!flag_save)
+	if (flag_save==false)
 	{
 		return -1;
 	}
@@ -269,16 +318,21 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 		chsize(fileno(fp), delete_point);
 		fclose(fp);
 
+
 		std::ofstream wFile(location, std::ios::in | std::ios::out);
 		wFile.seekp(0, std::ios::end);
 		for (int i = 0; i < record_list.size(); i++)
 		{
 			wFile << record_list[i] << std::endl;
 		}
+
+
 		wFile.close();
 		return index;
 	}
+	return -1;
 }
+
 
 
 void __Create_index_file()
@@ -310,6 +364,7 @@ void __Set_index(int index)
 }
 
 
+
 /*
 	카테고리에 해당하는 달의 총 수입을 리턴한다.
 */
@@ -330,6 +385,8 @@ int __Get_total_income(std::string category_name, std::string which_month)
 	}
 	return std::stoi(income);
 }
+
+
 /*
 	카테고리의 해당 월의 총 수입 값을 입력한다.
 */
@@ -389,6 +446,8 @@ void __Set_total_income(std::string category_name, std::string which_month, int 
 		rFile.close();
 	}
 }
+
+
 /*
 	카테고리의 해당 월의 총 지출을 출력한다.
 */
@@ -409,6 +468,8 @@ int __Get_total_expense(std::string category_name, std::string which_month)
 	}
 	return std::stoi(expense);
 }
+
+
 /*
 	카테고리의 해당 월 파일의 지출 총합을 설정한다.
 */
@@ -467,6 +528,7 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 }	
 
 
+
 /*
 	[ Return Value ]
 		{-1} : failed to create day : same day have already exist
@@ -505,7 +567,7 @@ const bool __find_day(int year, int mon, int day)
 	std::string date = __make_perfect_date(year, mon, day);
 	std::string file_name = "./Day/" + date + ".txt";
 
-	if (__check_file_exist(file_name))
+	if (__File_exist(file_name))
 	{
 		return 1;
 	}
