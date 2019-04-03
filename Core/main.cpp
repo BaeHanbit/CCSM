@@ -8,9 +8,9 @@ void main()
 	__Create_dir(CATEGORY);
 	
 
-	__Create_category("식비", 10);
-	__Create_category("교통비", 1);
-	__Create_category("경조사비", 31);
+	//__Create_category("식비", 10);
+	//__Create_category("교통비", 1);
+	//__Create_category("경조사비", 31);
 
 
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입1", 10, INCOME);
@@ -37,11 +37,11 @@ void main()
 	//__Remove_category_file("식비");
 
 
-	std::string* temp = new std::string[__Category_month_file_cnt("식비")];
-	int cnt = __Get_all_file(temp,"./Category/식비");
-	for (int i = 0; i < cnt; i++)
-	{
-		std::cout << temp[i] << std::endl;
-	}
-	delete[] temp;
+	//std::string* temp = new std::string[__Category_month_file_cnt("식비")];
+	//int cnt = __Get_all_file(temp,"./Category/식비");
+	//for (int i = 0; i < cnt; i++)
+	//{
+	//	std::cout << temp[i] << std::endl;
+	//}
+	//delete[] temp;
 }

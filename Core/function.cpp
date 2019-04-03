@@ -1,4 +1,5 @@
 #include "function.h"
+#include "file.h"
 
 /*
 	[ Return Value]
@@ -212,6 +213,70 @@ std::string __current_time()
 	return hour + '-' + min;
 }
 
+/*
+	Return : 입력받은 record 데이터에서 해당 레코드의 기록 일을 반환한다.
+	이때 시간을 포함한다
+*/
+std::string __Return_time_from_record(std::string record)
+{
+	//  index|date+time|memo|+/-cost
+	std::string date;
+	for (int i = 0; i < record.length(); i++)
+	{
+		if (record[i] == '|')
+		{
+			for (int j = i + 1; j < record.length(); j++)
+			{
+				date += record[j];
+				if (record[j] == '|')
+				{
+					return date;
+				}//end of 2nd if
+			}//end of 2nd for
+		}//end of 1st if
+	}//end of 1st for
+}
+
+std::string __Get_nearest_exist_file(std::string category_name, std::string start_mon, std::string end_mon)
+{
+	std::string location = CATEGORY + category_name + "/" + start_mon + ".txt";
+	//next mon 함수 만들자
+}
+
+/*
+	date 1이 더 빠른 날짜면 1을 리턴
+	date 2가 더 빠른 날짜면 2를 리턴
+	같으면 0
+
+	연도의 차이가 자리수 이상이면 -1
+*/
+int __Compare_date(std::string date1, std::string date2)
+{
+	if (date1.length() != date2.length())
+		return -1;
+
+	for (int i = 0; i < date1.length(); i++)
+	{
+		if (i == 4 || i == 7)
+			continue;
+		else
+		{
+			if (date1[i] > date2[i])
+			{
+				return 1;
+			}
+			else if (date1[i] < date2[i])
+			{
+				return 2;
+			}
+			else
+			{
+				continue;
+			}
+		}
+	}
+	return 0;
+}
 /*
 	[ Return Value ]
 		{0~6} : Normal

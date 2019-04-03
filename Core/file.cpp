@@ -334,7 +334,9 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 }
 
 
-
+/*
+	고유번호를 저장할 index파일을 생성한다.
+*/
 void __Create_index_file()
 {
 	std::string location = "./Index.txt";
@@ -349,6 +351,11 @@ void __Create_index_file()
 		wFile << std::to_string(0);
 	}
 }
+
+
+/*
+	index 번호를 가져온다.
+*/
 int __Get_index()
 {
 	char buffer[100];
@@ -356,13 +363,17 @@ int __Get_index()
 	rFile.getline(buffer, 100);
 	return std::stoi(buffer);
 }
+
+
+/*
+	index 번호를 설정한다.
+*/
 void __Set_index(int index)
 {
 	std::ofstream wFile("./Index.txt", std::ios::in | std::ios::out);
 	wFile.seekp(0, std::ios::beg);
 	wFile << index;
 }
-
 
 
 /*
@@ -526,6 +537,61 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 		rFile.close();
 	}
 }	
+
+/*
+
+*/
+const int __Get_total_from_to(std::string category_name, std::string start_date, std::string end_date, bool flag)
+{
+	std::string start_month = start_date.substr(0, 7);
+	std::string end_month = end_date.substr(0, 7);
+	std::string location = CATEGORY + category_name + "/" + start_month + ".txt";
+	//시작 일의 데이터가 아예 없을 수도 있잖아 그러니까 있는 파일까지 당기는거 생각할것
+	// 시작일과 끝의 일까지 모두 없을 수도 있고
+
+
+
+
+	do
+	{
+		std::ifstream rFile(location, std::ios::in);
+		rFile.seekg(0, std::ios::beg);
+
+		std::string date;
+		std::string buffer;
+		std::string meta_buffer;
+		std::getline(rFile, meta_buffer);
+
+		while (!rFile.eof())
+		{
+			std::getline(rFile,buffer);
+			date = __Return_time_from_record(buffer).substr(0, 10);
+			
+			if (__Compare_date(date, start_date) != 1 && __Compare_date(date, end_date) != 2)
+			{
+				if (flag == INCOME)
+				{
+
+				}
+				else
+				{
+
+				}
+			}
+			else if (__Compare_date(date, start_date) == 1)//가져온 레코드가 과거
+			{
+				continue;
+			}
+			else if (__Compare_date(date, end_date) == 2)//가져온 레코드가 미래
+			{
+				break;
+			}
+		}
+	} while (!(start_date == end_date));
+}
+
+
+
 
 
 
