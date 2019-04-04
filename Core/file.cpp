@@ -539,21 +539,29 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 }	
 
 /*
-
+	Parameter
+		카테고리 이름과 검색을 시작할 날짜, 종료할 날짜와 수입, 지출 항목을 받는다.
 */
 const int __Get_total_from_to(std::string category_name, std::string start_date, std::string end_date, bool flag)
 {
 	std::string start_month = start_date.substr(0, 7);
 	std::string end_month = end_date.substr(0, 7);
 	std::string location = CATEGORY + category_name + "/" + start_month + ".txt";
-	//시작 일의 데이터가 아예 없을 수도 있잖아 그러니까 있는 파일까지 당기는거 생각할것
-	// 시작일과 끝의 일까지 모두 없을 수도 있고
+	std::string month_point = start_month;
+	int total = 0;
 
-
-
-
-	do
+	while (true)
 	{
+		try
+		{
+			month_point = __Get_nearest_mon_exist_file(category_name, month_point, end_date);
+		}
+		catch (int err)
+		{
+			break;
+		}
+
+		location = CATEGORY + category_name + "/" + month_point + ".txt";
 		std::ifstream rFile(location, std::ios::in);
 		rFile.seekg(0, std::ios::beg);
 
@@ -565,18 +573,40 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 		while (!rFile.eof())
 		{
 			std::getline(rFile,buffer);
-			date = __Return_time_from_record(buffer).substr(0, 10);
+
+			try
+			{
+				date = __Return_time_from_record(buffer).substr(0, 10);
+			}
+			catch (bool enter)
+			{
+				break;
+			}
 			
 			if (__Compare_date(date, start_date) != 1 && __Compare_date(date, end_date) != 2)
 			{
 				if (flag == INCOME)
 				{
-
+					if (buffer.find('+') == buffer.npos)
+					{
+						continue;
+					}
+					else
+					{
+						total += std::stoi(buffer.substr(buffer.find('+') + 1));
+					}
 				}
 				else
 				{
-
-				}
+					if (buffer.find('+') != buffer.npos)
+					{
+						continue;
+					}
+					else
+					{
+						total += std::stoi(buffer.substr(buffer.find("|-") + 2));
+					}
+				}//end of income,expense if
 			}
 			else if (__Compare_date(date, start_date) == 1)//가져온 레코드가 과거
 			{
@@ -586,8 +616,12 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 			{
 				break;
 			}
-		}
-	} while (!(start_date == end_date));
+		}//end of line while
+		month_point = __Next_mon_string(month_point);
+		rFile.close();
+	}//end of file while
+
+	return total;
 }
 
 

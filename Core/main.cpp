@@ -13,20 +13,23 @@ void main()
 	//__Create_category("경조사비", 31);
 
 
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입1", 10, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입2", 100, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입3", 1000, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입4", 10000, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입5", 10, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입6", 100, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입7", 1000, INCOME);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출0", 10, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출1", 100, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출2", 1000, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출3", 10000, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출4", 10, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출5", 100, EXPENSE);
-	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출6", 1000, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입1", 10, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입2", 100, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입3", 1000, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입4", 10000, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입5", 10, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입6", 100, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입7", 1000, INCOME);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출0", 10, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출1", 100, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출2", 1000, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출3", 10000, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출4", 10, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출5", 100, EXPENSE);
+	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출6", 1000, EXPENSE);
+
+	std::cout << __Get_total_from_to("식비", "2000-01-01", "2019-05-30", EXPENSE) << std::endl;
+	//현재보다 미래의 END_Date를 넣으면 작동 안함
 
 
 	//std::cout << __Remove_cate_data("식비", "2019-04", 5) << std::endl;
