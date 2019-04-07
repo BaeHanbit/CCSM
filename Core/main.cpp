@@ -4,9 +4,9 @@
 enum menu{CREATE_CATEGORY=0,REMOVE_CATEGORY,CATEGORY_COUNT};
 void main()
 {
-	__Create_index_file();
-	__Create_dir(CATEGORY);
-	
+	//__Create_index_file();
+	//__Create_dir(CATEGORY);
+	//
 
 	//__Create_category("식비", 10);
 	//__Create_category("교통비", 1);
@@ -28,9 +28,15 @@ void main()
 	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출5", 100, EXPENSE);
 	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출6", 1000, EXPENSE);
 
-	std::cout << __Get_total_from_to("식비", "2100-01-01", "2119-07-30", INCOME) << std::endl;
-	//현재보다 미래의 END_Date를 넣으면 작동 안함
+	//std::cout << __Get_total_from_to("식비", "2000-01-01", "2019-07-30", INCOME) << std::endl;
 
+
+	std::string *buffer = new std::string[100];
+	int status = __Get_data(buffer, "식비", "2019-04", 0, 16);
+
+	std::cout << status << std::endl;
+	std::cout << buffer[13] << std::endl;
+	delete[] buffer;
 
 	//std::cout << __Remove_cate_data("식비", "2019-04", 5) << std::endl;
 	//std::cout << __Remove_cate_data("식비", "2019-04", 44) << std::endl;

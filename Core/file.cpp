@@ -634,8 +634,35 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 	return total;
 }
 
+/*
+	databuffer에 start_index부터 cnt개 만큼 담아준다.
+	0 : 정상
+	-1 : 시작 인덱스 값이 오버플로우
+	-2 : cnt 값이 오버플로우
+*/
+const int __Get_data(std::string* data_buffer, std::string category_name, std::string which_month, int start_index, int cnt)
+{
+	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
+	std::ifstream rFile(location, std::ios::in);
+	rFile.seekg(0, std::ios::beg);
 
+	std::string metadata;
+	std::getline(rFile, metadata);
 
+	for (int i = 0; i < start_index-1; i++)
+	{
+		if (rFile.eof() == true) { return-1; }
+		std::string buffer;
+		std::getline(rFile, buffer);
+	}
+
+	for (int i = 0; i < cnt; i++)
+	{
+		if (rFile.eof() == true) { return -2; }
+		std::getline(rFile, data_buffer[i]);
+	}
+	return 0;
+}
 
 
 

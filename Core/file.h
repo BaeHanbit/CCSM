@@ -50,6 +50,8 @@ void __Set_total_income(std::string category_name, std::string which_month, int 
 int __Get_total_expense(std::string category_name, std::string which_month);
 void __Set_total_expense(std::string category_name, std::string which_month, int cost);
 const int __Get_total_from_to(std::string category_name, std::string start_date, std::string end_date, bool flag);
+const int __Get_data(std::string* data_buffer, std::string category_name, std::string which_month, int start_index = 0, int cnt = 1);
+
 
 const int __create_day(int year, int mon, int day);
 const bool __find_day(int year, int mon, int day);
