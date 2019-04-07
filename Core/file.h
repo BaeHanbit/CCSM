@@ -33,6 +33,7 @@ void __Create_category(std::string name, int reset_date);
 void __Create_txt_file(std::string name);
 void __Remove_category_dir(std::string name);
 void __Remove_category_file(std::string name);
+void __Remove_category(std::string name);
 int __Get_all_file(std::string* buffer, std::string location);
 const int __Category_month_file_cnt(std::string category_name);
 void __Insert_cate_data(std::string category_name, std::string time, std::string memo, int cost, bool type);
@@ -53,7 +54,5 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 const int __create_day(int year, int mon, int day);
 const bool __find_day(int year, int mon, int day);
 void __add_record_day(std::string cate, int cost, std::string text, std::string time, bool type, int index);
-
-
 const bool __set_flag(std::string name, bool flag);
 

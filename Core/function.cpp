@@ -280,10 +280,9 @@ std::string __Get_nearest_mon_exist_file(std::string category_name, std::string 
 			month_point = __Next_mon_string(month_point);
 			location = CATEGORY + category_name + "/" + month_point + ".txt";
 		}
-	} while ((start_mon < end_mon));
+	} while ((month_point < end_mon));
 
-	if (start_mon >= end_mon)
-		throw - 1;
+	throw - 1;
 }
 
 /*

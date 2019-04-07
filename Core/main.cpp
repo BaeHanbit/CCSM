@@ -28,7 +28,7 @@ void main()
 	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출5", 100, EXPENSE);
 	//__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "지출6", 1000, EXPENSE);
 
-	std::cout << __Get_total_from_to("식비", "2000-01-01", "2019-05-30", EXPENSE) << std::endl;
+	std::cout << __Get_total_from_to("식비", "2100-01-01", "2119-07-30", INCOME) << std::endl;
 	//현재보다 미래의 END_Date를 넣으면 작동 안함
 
 

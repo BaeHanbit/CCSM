@@ -161,6 +161,16 @@ void __Remove_category_file(std::string name)
 
 
 /*
+	카테고리 파일과 카테고리 폴더 삭제
+*/
+void __Remove_category(std::string name)
+{
+	__Remove_category_dir(name);
+	__Remove_category_file(name);
+}
+
+
+/*
 	입력 받은 버퍼에, 해당 경로(디렉토리)안의 모든 txt파일 정보를 담아줌
 	이때 버퍼를 배열로 받음으로, 배열 크기를 알아야함
 */
@@ -554,7 +564,7 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 	{
 		try
 		{
-			month_point = __Get_nearest_mon_exist_file(category_name, month_point, end_date);
+			month_point = __Get_nearest_mon_exist_file(category_name, month_point, end_month);
 		}
 		catch (int err)
 		{
