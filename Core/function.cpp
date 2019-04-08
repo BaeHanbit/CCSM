@@ -56,11 +56,8 @@ void __Set_calender()
 			{
 				temp_date = __make_perfect_date(temp_year, temp_month, temp_day);
 				calender.insert(std::make_pair(temp_date, weekday));
-				std::cout << temp_date<<"   "<<weekday<<std::endl;
-
 				weekday = __next_weekday(weekday);
 			}
-			std::cout << std::endl;
 		}
 	}
 }
@@ -245,7 +242,7 @@ std::string __Return_time_from_record(std::string record)
 			}//end of 2nd for
 		}//end of 1st if
 	}//end of 1st for
-	throw true;
+	return "0";
 }
 
 /*

@@ -645,3 +645,47 @@ const int __Get_data(std::string* data_buffer, std::string category_name, std::s
 	}
 	return 0;
 }
+
+void __Get_day_record(std::vector<std::string>& day_record ,std::string date)
+{
+	std::string location = MASTER;
+	std::string categories[MAX_CATEGORY_NUMBER];
+	int cnt = __Get_all_file(categories, location);
+	std::string* file_location = new std::string[cnt];
+
+	for (int i = 0; i < cnt; i++)
+	{
+		file_location[i] = CATEGORY + categories[i].substr(0, categories[i].find(".txt")) + "/" + date.substr(0, 7) + ".txt";
+		std::ifstream rFile(file_location[i], std::ios::in);
+		std::string metadata;
+		std::getline(rFile, metadata);
+
+		while (rFile.eof() != true)
+		{
+			std::string record;
+			std::string record_date;
+			std::getline(rFile, record);
+			record_date = __Return_time_from_record(record).substr(0, 10);
+			if (record_date == "0")
+				break;
+			if (__Compare_date(record_date, date) == 0)
+			{
+				day_record.push_back(record);
+			}
+			else if (__Compare_date(record_date, date) == 1)
+			{
+				continue;
+			}
+			else if (__Compare_date(record_date, date) == 2)
+			{
+				break;
+			}
+		}//end of while
+		rFile.close();
+	}
+
+
+
+	
+	delete[] file_location;
+}
