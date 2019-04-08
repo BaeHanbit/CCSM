@@ -1,18 +1,12 @@
 #pragma once
-#pragma warning(disable:4996)
-#include <iostream>
-#include <list>
-#include <map>
-#include <string>
-#include <time.h>
-#include <fstream>
+#include "header.h"
 
 enum weekday { SUNDAY = 0, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, WEEKDAY_ERROR = 100 };
-static std::map<int, std::string>calender;
+extern std::vector<std::pair<std::string, weekday>> calender;
 
-const int __maximum_day(int month,int year);
+const int __Maximum_day(int month,int year);
 const int __next_month(int mon);
-const int __set_calender();
+void __Set_calender();
 const int __get_num_from_string(std::string buffer);
 
 

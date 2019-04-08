@@ -1,21 +1,5 @@
 #pragma once
-#pragma warning(disable:4996)
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <fstream>
-#include <filesystem>
-#include <experimental/filesystem>
-#include <list>
-#include <vector>
-#include <time.h>
-#include <Windows.h>
-#include <direct.h>
-#include <io.h>
-#include <stdio.h>
-#include <conio.h>
-#include <stdlib.h>
-#include <errno.h>
+#include "header.h"
 
 #define CATEGORY std::string("./Category/")
 #define DAY std::string("./Day/")
@@ -51,10 +35,4 @@ int __Get_total_expense(std::string category_name, std::string which_month);
 void __Set_total_expense(std::string category_name, std::string which_month, int cost);
 const int __Get_total_from_to(std::string category_name, std::string start_date, std::string end_date, bool flag);
 const int __Get_data(std::string* data_buffer, std::string category_name, std::string which_month, int start_index = 0, int cnt = 1);
-
-
-const int __create_day(int year, int mon, int day);
-const bool __find_day(int year, int mon, int day);
-void __add_record_day(std::string cate, int cost, std::string text, std::string time, bool type, int index);
-const bool __set_flag(std::string name, bool flag);
 

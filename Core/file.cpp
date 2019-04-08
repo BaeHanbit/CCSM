@@ -18,7 +18,6 @@ const bool __File_exist(std::string location)
 	}
 }
 
-
 /*
 	해당 카테고리가 존재하는지 확인합니다.
 */
@@ -26,7 +25,6 @@ const bool __Find_dir(std::string name)
 {
 	return access(name.c_str(), 00) == 0 ? 1 : 0;
 }
-
 
 /*
 	인자로 받은 이름의 디렉토리를 만듭니다.
@@ -43,7 +41,6 @@ const int __Create_dir(std::string name)
 		return 0;
 	}
 }
-
 
 /*
 	Category 폴더 밑에 자신만의 폴더 생성
@@ -78,7 +75,6 @@ void __Create_category(std::string name, int reset_date)
 	wFile2 << content << std::endl;
 }
 
-
 /*
 	인자로 들어온 경로와 이름의 파일 생성
 */
@@ -94,7 +90,6 @@ void __Create_txt_file(std::string name)
 		std::ofstream make_file(file_name);
 	}
 }
-
 
 /*
 	해당 카테고리 폴더를 지웁니다.
@@ -149,7 +144,6 @@ void __Remove_category_dir(std::string name)
 	}
 }
 
-
 /*
 	Master폴더 밑에 존재하는 자신의 정보가 들어있는 파일 삭제
 */
@@ -159,7 +153,6 @@ void __Remove_category_file(std::string name)
 	std::remove(location.c_str());
 }
 
-
 /*
 	카테고리 파일과 카테고리 폴더 삭제
 */
@@ -168,7 +161,6 @@ void __Remove_category(std::string name)
 	__Remove_category_dir(name);
 	__Remove_category_file(name);
 }
-
 
 /*
 	입력 받은 버퍼에, 해당 경로(디렉토리)안의 모든 txt파일 정보를 담아줌
@@ -197,7 +189,6 @@ int __Get_all_file(std::string* buffer, std::string location)
 	return cnt;
 }
 
-
 /*
 
 */
@@ -217,7 +208,6 @@ const int __Category_month_file_cnt(std::string category_name)
 
 	return (today_year - made_year) * 12 + today_month - made_month;
 }
-
 
 /*
 	해당 카테고리에 수입,지출 기록을 추가한다	
@@ -266,7 +256,6 @@ void __Insert_cate_data(std::string category_name, std::string time, std::string
 
 	wFile.close();
 }
-
 
 /*
 	Return
@@ -343,7 +332,6 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 	return -1;
 }
 
-
 /*
 	고유번호를 저장할 index파일을 생성한다.
 */
@@ -362,7 +350,6 @@ void __Create_index_file()
 	}
 }
 
-
 /*
 	index 번호를 가져온다.
 */
@@ -374,7 +361,6 @@ int __Get_index()
 	return std::stoi(buffer);
 }
 
-
 /*
 	index 번호를 설정한다.
 */
@@ -384,7 +370,6 @@ void __Set_index(int index)
 	wFile.seekp(0, std::ios::beg);
 	wFile << index;
 }
-
 
 /*
 	카테고리에 해당하는 달의 총 수입을 리턴한다.
@@ -406,7 +391,6 @@ int __Get_total_income(std::string category_name, std::string which_month)
 	}
 	return std::stoi(income);
 }
-
 
 /*
 	카테고리의 해당 월의 총 수입 값을 입력한다.
@@ -468,7 +452,6 @@ void __Set_total_income(std::string category_name, std::string which_month, int 
 	}
 }
 
-
 /*
 	카테고리의 해당 월의 총 지출을 출력한다.
 */
@@ -489,7 +472,6 @@ int __Get_total_expense(std::string category_name, std::string which_month)
 	}
 	return std::stoi(expense);
 }
-
 
 /*
 	카테고리의 해당 월 파일의 지출 총합을 설정한다.
@@ -566,7 +548,7 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 		{
 			month_point = __Get_nearest_mon_exist_file(category_name, month_point, end_month);
 		}
-		catch (int err)
+		catch (int)
 		{
 			break;
 		}
@@ -588,7 +570,7 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 			{
 				date = __Return_time_from_record(buffer).substr(0, 10);
 			}
-			catch (bool enter)
+			catch (bool)
 			{
 				break;
 			}
@@ -662,92 +644,4 @@ const int __Get_data(std::string* data_buffer, std::string category_name, std::s
 		std::getline(rFile, data_buffer[i]);
 	}
 	return 0;
-}
-
-
-
-/*
-	[ Return Value ]
-		{-1} : failed to create day : same day have already exist
-		{0} : Success to create day
-
-	[ Function Act ]
-		Create day.
-*/
-const int __create_day(int year, int mon, int day)
-{
-	if (__find_day(year, mon, day))
-	{
-		return -1;
-	}
-	else
-	{
-		std::string date = __make_perfect_date(year, mon, day);
-		std::string file_name = "./Day/" + date + ".txt";
-		std::ofstream file(file_name);
-		return 0;
-	}
-}
-/*
-	Parameter
-		year : 연도
-		mon : 달
-		day : 일
-
-	Return
-		0 : 파일 없음
-		1 : 파일 존재
-*/
-const bool __find_day(int year, int mon, int day)
-{
-	std::ifstream file;
-	std::string date = __make_perfect_date(year, mon, day);
-	std::string file_name = "./Day/" + date + ".txt";
-
-	if (__File_exist(file_name))
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-/*
-	Parameter
-		cate : 카테고리 이름
-		text : 메모
-		time : 시간
-		date : 날짜
-		type : 수입 지출
-		index : 카테고리와 연동되는 고유 인덱스
-*/
-void __add_record_day(std::string cate, int  cost, std::string text, std::string date, bool type, int index)
-{
-	std::string location = "./Day/" + date + ".txt";
-	std::ofstream wFile(location, std::ios::in | std::ios::out);
-	wFile.seekp(0, std::ios::end);
-
-	char symbol = type == INCOME ? '+' : '-';
-	std::string content = std::to_string(index) + '|' + symbol;
-	content += std::to_string(cost) + '|' + __current_time() + '|' + text + '|' + cate;
-	
-	wFile << content << std::endl;
-}
-/*
-	Parameter
-		name : 카테고리 이름
-		flag : 리셋 여부의 flag{0: 초기화 X | 1: 초기화}
-*/
-const bool __set_flag(std::string name, bool flag)
-{			
-	std::string location = "./Category/" + name + ".txt";
-	//또한, ios::app 모드로 파일을 열었을 경우 seekp() 함수가 먹히지 않습니다.
-	//당장은 이동을 하지만, 출력을 할 경우 다시 파일 끝에서부터 출력합니다.
-	std::ofstream file(location,std::ios::in | std::ios::out);
-	
-	file.seekp(25, std::ios::beg);
-	file << flag;
-
-	return flag;
 }

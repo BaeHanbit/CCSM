@@ -1,6 +1,8 @@
 #include "function.h"
 #include "file.h"
 
+std::vector<std::pair<std::string, weekday>> calender;
+
 /*
 	[ Return Value]
 		{28~31} : Normal
@@ -8,7 +10,7 @@
 	[ Function Act ]
 		Return Maximum day of the month inputed.
 */
-const int __maximum_day(int month, int year)
+const int __Maximum_day(int month, int year)
 {
 	if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12)
 		return 31;
@@ -34,14 +36,11 @@ const int __next_month(int mon)
 }
 
 /*
-	[ Return Value]
-		{0} : Normal
-
 	[ Function Act ]
 		Match weekday and date.
 		Set it in calender map.
 */
-const int __set_calender()
+void __Set_calender()
 {
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
@@ -53,10 +52,10 @@ const int __set_calender()
 	{
 		for (int temp_month = 1; temp_month <= 12; temp_month++)
 		{
-			for (int temp_day = 1; temp_day <= __maximum_day(temp_month, temp_year); temp_day++)
+			for (int temp_day = 1; temp_day <= __Maximum_day(temp_month, temp_year); temp_day++)
 			{
 				temp_date = __make_perfect_date(temp_year, temp_month, temp_day);
-				calender.insert(std::make_pair(weekday, temp_date));
+				calender.push_back(std::make_pair(temp_date, weekday));
 				std::cout << temp_date<<"   "<<weekday<<std::endl;
 
 				weekday = __next_weekday(weekday);
@@ -64,7 +63,6 @@ const int __set_calender()
 			std::cout << std::endl;
 		}
 	}
-	return 0;
 }
 
 /*
@@ -190,11 +188,11 @@ std::string __next_reset_date(int reset_day)
 
 	int next_mon = __next_month(tm.tm_mon);
 	int year = next_mon == 1 ? tm.tm_year + 1901 : tm.tm_year + 1900;
-	int max_day = __maximum_day(next_mon, year);
+	int max_day = __Maximum_day(next_mon, year);
 
 	if (tm.tm_mday < reset_day)
 	{
-		max_day = __maximum_day(tm.tm_mon + 1, tm.tm_year + 1900);
+		max_day = __Maximum_day(tm.tm_mon + 1, tm.tm_year + 1900);
 		return __make_perfect_date(tm.tm_year + 1900, tm.tm_mon + 1, reset_day > max_day ? max_day : reset_day);
 	}
 	else
@@ -285,6 +283,7 @@ std::string __Get_nearest_mon_exist_file(std::string category_name, std::string 
 	throw - 1;
 }
 
+
 /*
 	date 1이 더 빠른 날짜면 1을 리턴
 	date 2가 더 빠른 날짜면 2를 리턴
@@ -319,6 +318,7 @@ int __Compare_date(std::string date1, std::string date2)
 	}
 	return 0;
 }
+
 /*
 	[ Return Value ]
 		{0~6} : Normal
