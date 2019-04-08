@@ -2,7 +2,7 @@
 #include "header.h"
 
 enum weekday { SUNDAY = 0, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, WEEKDAY_ERROR = 100 };
-extern std::vector<std::pair<std::string, weekday>> calender;
+extern std::map<std::string, weekday> calender;
 
 const int __Maximum_day(int month,int year);
 const int __next_month(int mon);

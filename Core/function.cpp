@@ -1,7 +1,7 @@
 #include "function.h"
 #include "file.h"
 
-std::vector<std::pair<std::string, weekday>> calender;
+std::map<std::string, weekday> calender;
 
 /*
 	[ Return Value]
@@ -55,7 +55,7 @@ void __Set_calender()
 			for (int temp_day = 1; temp_day <= __Maximum_day(temp_month, temp_year); temp_day++)
 			{
 				temp_date = __make_perfect_date(temp_year, temp_month, temp_day);
-				calender.push_back(std::make_pair(temp_date, weekday));
+				calender.insert(std::make_pair(temp_date, weekday));
 				std::cout << temp_date<<"   "<<weekday<<std::endl;
 
 				weekday = __next_weekday(weekday);

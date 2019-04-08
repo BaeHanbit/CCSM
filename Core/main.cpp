@@ -31,11 +31,11 @@ void main()
 	//std::cout << __Get_total_from_to("식비", "2000-01-01", "2019-07-30", INCOME) << std::endl;
 
 
-	std::string *buffer = new std::string[100];
-	int status = __Get_data(buffer, "식비", "2019-04", 0, 16);
-	std::cout << status << std::endl;
-	std::cout << buffer[13] << std::endl;
-	delete[] buffer;
+	//std::string *buffer = new std::string[100];
+	//int status = __Get_data(buffer, "식비", "2019-04", 0, 16);
+	//std::cout << status << std::endl;
+	//std::cout << buffer[13] << std::endl;
+	//delete[] buffer;
 
 
 
