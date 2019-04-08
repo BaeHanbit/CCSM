@@ -176,33 +176,13 @@ std::string __today_date()
 	Return
 		다음 초기화 날짜
 */
-std::string __next_reset_date(int reset_day)
+std::string __reset_date(int year, int month, int day)
 {
-	time_t t = time(NULL);
-	struct tm tm = *localtime(&t);
-
-
-
-	int next_mon = __next_month(tm.tm_mon);
-	int year = next_mon == 1 ? tm.tm_year + 1901 : tm.tm_year + 1900;
-	int max_day = __Maximum_day(next_mon, year);
-
-	if (tm.tm_mday < reset_day)
+	if (day > __Maximum_day(month, year))
 	{
-		max_day = __Maximum_day(tm.tm_mon + 1, tm.tm_year + 1900);
-		return __make_perfect_date(tm.tm_year + 1900, tm.tm_mon + 1, reset_day > max_day ? max_day : reset_day);
+		day = __Maximum_day(month, year);
 	}
-	else
-	{
-		if (max_day >= reset_day)
-		{
-			return __make_perfect_date(year, next_mon, reset_day);
-		}
-		else
-		{
-			return __make_perfect_date(year, next_mon, max_day);
-		}
-	}
+	return __make_perfect_month(month) + "-" + __make_perfect_day(day);
 }
 
 /*

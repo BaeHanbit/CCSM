@@ -689,3 +689,18 @@ void __Get_day_record(std::vector<std::string>& day_record ,std::string date)
 	
 	delete[] file_location;
 }
+
+/*
+	해당 카테고리의 리셋일자를 받아온다.
+*/
+const int __Get_reset_date(std::string category_name)
+{
+	std::string location = MASTER + category_name + ".txt";
+	std::ifstream rFile(location, std::ios::in);
+	rFile.seekg(0, std::ios::beg);
+
+	std::string metadata;
+	std::getline(rFile, metadata);
+	
+	return std::stoi(metadata.substr(0, 2));
+}
