@@ -688,7 +688,7 @@ BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPa
 
 			category_name = cate_name;
 
-			if (__File_exist("Master/" + category_name + ".txt") == 1)
+			if (__File_exist("Master/" + category_name + ".txt") == 0)
 			{
 				MessageBox(hDlg, "존재하지 않는 카테고리입니다.", "ERROR", MB_OK);
 			}
