@@ -1,3 +1,4 @@
+#pragma once
 #include <windows.h>
 #include <TCHAR.H>
 #include <stdio.h>
@@ -7,7 +8,10 @@
 #include <vector>
 #include <iostream>
 #include <io.h>
+#include <map>
 #include <string>
+#include "file.h"
+#include "function.h"
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 LRESULT hScrollMove(HWND hWnd, WPARAM wParam, LPARAM lParam, int boxHeight, int s);
@@ -28,6 +32,19 @@ HWND scroll, category_page;
 HWND hwnd, dlg;
 int TempPos, height = 0;
 HFONT hFont;
+
+extern std::map<std::string, weekday> calender;
+
+std::string current_date = __today_date();
+std::string today_year_s = current_date.substr(0, 4);
+std::string today_month_s = current_date.substr(5, 2);
+std::string today_day_s = current_date.substr(8, 2);
+int today_year_i = std::stoi(today_year_s);
+int today_month_i = std::stoi(today_month_s);
+int today_day_i = std::stoi(today_day_s);
+int selected_year = today_year_i;
+int selected_month = today_month_i;
+int selected_month_day = __Maximum_day(selected_month, selected_year);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
@@ -71,11 +88,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	int cate_num = 6;
 	TCHAR boxNum[5];
 	short zDelta;
-	//.c_str()
 
 	switch (iMsg)
 	{
 	case WM_CREATE:
+		__Create_dir(CATEGORY);
+		__Create_dir(MASTER);
+		__Create_index_file();
+		__Set_calender();
 		GetClientRect(hwnd, &rectView);
 		hButton1 = CreateWindow(TEXT("button"), TEXT("카테고리"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)1, hInst, NULL);
 		hButton2 = CreateWindow(TEXT("button"), TEXT("통계"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)2, hInst, NULL);
@@ -89,6 +109,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case 0:
 		{
+			selected_year = today_year_i;
+			selected_month = today_month_i;
+			selected_month_day = __Maximum_day(selected_month, selected_year);
 			DestroyButton();
 			status = 0;
 			InvalidateRgn(hwnd, NULL, TRUE);
@@ -123,13 +146,44 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			h3 = CreateWindow(TEXT("button"), TEXT("<"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)3, hInst, NULL);
 			h4 = CreateWindow(TEXT("button"), TEXT(">"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.9, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)4, hInst, NULL);
 			break;
-		case 5:
+		case 3:
+			switch (status)
+			{
+			case 0:
+				if (selected_month - 1 == 0)
+				{
+					selected_month = 12;
+					selected_year -= 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				else
+				{
+					selected_month -= 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				break;
+			}
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
 		case 4:
+			switch (status)
+			{
+			case 0:
+				if (selected_month + 1 == 13)
+				{
+					selected_month = 1;
+					selected_year += 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				else
+				{
+					selected_month += 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+			}
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
-		case 3:
+		case 5:
 			DestroyButton();
 			height = 0;
 			status = 5;
@@ -185,6 +239,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			{
 				MoveToEx(hdc, s2 * i, rectView.bottom * 0.05, NULL);
 				LineTo(hdc, s2 * i, rectView.bottom);
+			}
+			int flag = 0;
+			int n = 1;
+			for (int i = 1; i <= 6; i++)
+			{
+				for (int j = 1; j <= 7; j++)
+				{
+					if (n > selected_month_day)
+						break;
+					if (flag == 0)
+					{
+						std::string sele_month = "";
+						if (selected_month < 10)
+							sele_month = "0" + std::to_string(selected_month);
+						else
+							sele_month = std::to_string(selected_month);
+
+						std::string calender_data;
+						calender_data = std::to_string(selected_year) + "-" + sele_month + "-01";
+
+						if (calender.find(calender_data)->second == j - 1)
+							flag = 1;
+					}
+					if (flag == 1)
+					{
+						TextOut(hdc, s2 * j - s2 * 0.93, s1 * i - s1 * 0.5, std::to_string(n).c_str(), _tcslen(std::to_string(n).c_str()));
+						n++;
+					}
+				}
 			}
 			break;
 		}
@@ -299,7 +382,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			hBrush = CreateSolidBrush(RGB(133, 133, 133));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
 
-			
+
 			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right *  0.98, rectView.bottom);
 			TextOut(hdc, rectView.right * 0.15, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[07 : 00]", _tcslen("[07 : 00]"));
 			TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[전체]", _tcslen("[전체]"));
@@ -342,7 +425,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			SelectObject(hdc, oldBrush);
 			DeleteObject(hBrush);
 			break;
-		} 
+		}
 		EndPaint(hwnd, &ps);
 		break;
 	}
@@ -366,9 +449,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case 0:
 			if (mouse.x < rectView.right * 0.8 && mouse.y > rectView.bottom * 0.05)
 			{
-				MessageBox(hwnd, "dee", "dee", MB_OK);
-				status = 5;
-				SendMessage(hwnd, WM_COMMAND, NULL, NULL);
+
 			}
 			break;
 		}
@@ -501,8 +582,8 @@ void DrawLine(HDC hdc, RECT rectView)
 BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hCombo;
-	char hArr[][12] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12" };
-	char mArr[][60] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
+	char hArr[][12] = { "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12" };
+	char mArr[][60] = { "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12",
 		"13", "14", "15" ,"16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
 		"32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
 		"51", "52", "53", "54", "55", "56", "57", "58", "59" };
@@ -510,9 +591,11 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	switch (iMsg)
 	{
 	case WM_INITDIALOG:
-		SetDlgItemInt(hDlg, IDC_EDIT_YEAR, 2019, TRUE);
-		SetDlgItemInt(hDlg, IDC_EDIT_MONTH, 3, TRUE);
-		SetDlgItemInt(hDlg, IDC_EDIT_DAY, 28, TRUE);
+		CheckRadioButton(hDlg, IDC_RADIO_INCOME, IDC_RADIO_EXPENSE, IDC_RADIO_INCOME);
+
+		SetDlgItemInt(hDlg, IDC_EDIT_YEAR, today_year_i, TRUE);
+		SetDlgItemInt(hDlg, IDC_EDIT_MONTH, today_month_i, TRUE);
+		SetDlgItemInt(hDlg, IDC_EDIT_DAY, today_day_i, TRUE);
 
 		hCombo = GetDlgItem(hDlg, IDC_COMBO_HOUR);
 		for (int i = 0; i < 12; i++)
@@ -520,7 +603,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		hCombo = GetDlgItem(hDlg, IDC_COMBO_MINUTE);
 		for (int i = 0; i <= 59; i++)
 			SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)mArr[i]);
-		break;
+		return 1;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
@@ -555,13 +638,70 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
+	std::string category[20];
+	int category_num;
+	std::string category_name;
+	char cate_name[20];
+	int reset_date = 0;
+
 	switch (iMsg)
 	{
 	case WM_INITDIALOG:
+		category_num = __Get_all_file(category, MASTER);
+		cate_combo = GetDlgItem(hDlg, IDC_CATEGORY);
+		for (int i = 0; i < category_num; i++)
+		{
+			for (int j = 0; j < 4; j++)
+				category[i].pop_back();
+			SendMessage(cate_combo, CB_ADDSTRING, 0, (LPARAM)category[i].c_str());
+		}
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
+		case IDADD:
+			GetDlgItemText(hDlg, IDC_CATEGORY, cate_name, 20);
+			reset_date = GetDlgItemInt(hDlg, IDC_RESET_DATE, NULL, FALSE);
+
+			category_name = cate_name;
+
+			if (category_name == "")
+			{
+				MessageBox(hDlg, "카테고리 이름을 입력하세요.", "ERROR", MB_OK);
+			}
+			else if (reset_date < 1 || reset_date > 31)
+			{
+				MessageBox(hDlg, "사용할 수 없는 날짜입니다.", "ERROR", MB_OK);
+			}
+			else if (__File_exist("Master/" + category_name + ".txt") == 1)
+			{
+				MessageBox(hDlg, "이미 있는 카테고리입니다.", "ERROR", MB_OK);
+			}
+			else
+			{
+				__Create_category(category_name, reset_date);
+				EndDialog(hDlg, 0);
+			}
+			break;
+		case IDDELETE:
+			GetDlgItemText(hDlg, IDC_CATEGORY, cate_name, 20);
+
+			category_name = cate_name;
+
+			if (__File_exist("Master/" + category_name + ".txt") == 1)
+			{
+				MessageBox(hDlg, "존재하지 않는 카테고리입니다.", "ERROR", MB_OK);
+			}
+			else if (category_name == "전체")
+			{
+				MessageBox(hDlg, "\"전체\" 카테고리는 지울 수 없습니다.", "ERROR", MB_OK);
+			}
+			else
+			{
+				__Remove_category(category_name);
+				EndDialog(hDlg, 0);
+			}
+			break;
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
 			break;
