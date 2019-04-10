@@ -46,6 +46,9 @@ int selected_year = today_year_i;
 int selected_month = today_month_i;
 int selected_month_day = __Maximum_day(selected_month, selected_year);
 
+int cate_num = 0;
+std::string category_name[20];
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
 	MSG msg;
@@ -84,10 +87,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	int categoryBox = rectView.bottom * 0.12;
 	int box_num = 15;
 	int cateHis_num = 15;
-	std::string category_name[] = { "dae", "daedae", "daedaedae", "boo", "booboo", "boobooboo" };
-	int cate_num = 6;
 	TCHAR boxNum[5];
+	TCHAR category_percent[20];
 	short zDelta;
+	int category_income, category_expense, category_total_income = 0, category_total_expense = 0;
 
 	switch (iMsg)
 	{
@@ -124,16 +127,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		case 1:
 		{
+			selected_year = today_year_i;
+			selected_month = today_month_i;
 			height = 0;
 			DestroyButton();
 			status = 1;
+			cate_num = __Get_all_file(category_name, MASTER);
+			for (int i = 0; i < cate_num; i++)
+			{
+				for(int j = 0; j < 4; j++)
+					category_name[i].pop_back();
+			}
 			hButton1 = CreateWindow(TEXT("button"), TEXT("메인페이지"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)0, hInst, NULL);
 			hButton2 = CreateWindow(TEXT("button"), TEXT("통계"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)2, hInst, NULL);
 			category_His = CreateWindow(TEXT("button"), TEXT("카테고리\n\n상세보기"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_MULTILINE, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)8, hInst, NULL);
 			add_category = CreateWindow(TEXT("button"), TEXT("카테고리\n\n추가하기"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | BS_MULTILINE, rectView.right * 0.9, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)10, hInst, NULL);
 			scroll = CreateWindow(TEXT("scrollbar"), NULL, WS_CHILD | WS_VISIBLE | SBS_VERT, rectView.right * 0.78, rectView.bottom * 0.05, rectView.right * 0.02, rectView.bottom - rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
-			SetScrollRange(scroll, SB_CTL, 0, categoryBox * (cateHis_num - 7), TRUE);
-			SetScrollPos(scroll, SB_CTL, 0, TRUE);
+			if (cate_num > 7)
+				SetScrollRange(scroll, SB_CTL, 0, categoryBox * (cate_num - 7), TRUE);
+			else
+				SetScrollRange(scroll, SB_CTL, 0, 0, TRUE);
+			SetScrollPos(scroll, SB_CTL, 0, TRUE); 
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
 		}
@@ -216,6 +230,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case 10:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_ADD_DELETE_CATEGORY), hwnd, (DLGPROC)Dlg_DeleteCategory);
+			SendMessage(hwnd, WM_COMMAND, 1, NULL);
 			break;
 		}
 	case WM_PAINT:
@@ -277,29 +292,62 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			hBrush = CreateSolidBrush(RGB(250, 243, 219));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
 
-			for (int i = 1; i <= cateHis_num; i++)
+			double percent;
+			int i_percent;
+
+			for (int i = 1; i <= cate_num; i++)
 			{
+				hBrush = CreateSolidBrush(RGB(250, 243, 219));	
+				SelectObject(hdc, hBrush);
+
+				std::string selected_m;
+
+				if (selected_month < 10)
+					selected_m = '0' + std::to_string(selected_month);
+				else
+					selected_m = std::to_string(selected_month);
+				category_income = __Get_total_income(category_name[i - 1], std::to_string(selected_year) + '-' + selected_m);
+				category_expense = __Get_total_expense(category_name[i - 1], std::to_string(selected_year) + '-' + selected_m);
+
+				category_total_income += category_income;
+				category_total_expense += category_expense;
+
+				if (category_income == 0 && category_expense == 0)
+					percent = 0;
+				else if (category_expense == 0)
+					percent = 1;
+				else 
+					percent = (double)category_expense / category_income;
+
+				i_percent = percent * 100;
+
+				if (percent > 1)
+				{
+					wsprintf(category_percent, TEXT("[%d%%] %d / %d"), 100, category_income - category_expense, category_income);
+				}
+				else
+				{
+					wsprintf(category_percent, TEXT("[%d%%] %d / %d"), i_percent, category_income - category_expense, category_income);
+				}
+
 				if (i == 1)
 				{
 					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right *  0.78, rectView.bottom * 0.05 + categoryBox - height);
 					SetBkMode(hdc, TRANSPARENT);
-					TextOut(hdc, rectView.right * 0.06, rectView.bottom * 0.025 + categoryBox / 2 - height, "[식비]", _tcslen("[식비]"));
-					TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.06 + categoryBox / 2 - height, "[70%] 3500 / 7000", _tcslen("[70%] 3500 / 7000"));
+					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.025 + categoryBox / 2 - height, category_name[i - 1].c_str(), _tcslen(category_name[i - 1].c_str()));
+					TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.06 + categoryBox / 2 - height, category_percent, _tcslen(category_percent));
 				}
 				else
 				{
 					Rectangle(hdc, 0, rectView.bottom * 0.05 + categoryBox * (i - 1) - height, rectView.right *  0.78, rectView.bottom * 0.05 + categoryBox * i - height);
 					SetBkMode(hdc, TRANSPARENT);
-					TextOut(hdc, rectView.right * 0.06, rectView.bottom * 0.025 + categoryBox * (i - 1) + categoryBox / 2 - height, "[기타]", _tcslen("[기타]"));
-					TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.06 + categoryBox * (i - 1) + categoryBox / 2 - height, "[70%] 3500 / 7000", _tcslen("[70%] 3500 / 7000"));
+					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.025 + categoryBox * (i - 1) + categoryBox / 2 - height, category_name[i - 1].c_str(), _tcslen(category_name[i - 1].c_str()));
+					TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.06 + categoryBox * (i - 1) + categoryBox / 2 - height, category_percent, _tcslen(category_percent));
 				}
-			}
 
-			hBrush = CreateSolidBrush(RGB(255, 255, 255));
-			SelectObject(hdc, hBrush);
+				hBrush = CreateSolidBrush(RGB(255, 255, 255));
+				SelectObject(hdc, hBrush);
 
-			for (int i = 1; i <= cateHis_num; i++)
-			{
 				if (i == 1)
 				{
 					Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 - height, rectView.right * 0.75, rectView.bottom * 0.14 - height);
@@ -308,30 +356,58 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				{
 					Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 + categoryBox * (i - 1) - height, rectView.right * 0.75, rectView.bottom * 0.14 + categoryBox * (i - 1) - height);
 				}
-			}
 
-			hBrush = CreateSolidBrush(RGB(133, 133, 133));
-			SelectObject(hdc, hBrush);
+				hBrush = CreateSolidBrush(RGB(133, 133, 133));
+				SelectObject(hdc, hBrush);
 
-			for (int i = 1; i <= cateHis_num; i++)
-			{
 				if (i == 1)
 				{
-					Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 - height, rectView.right * 0.6, rectView.bottom * 0.14 - height);
+					if (percent >= 1)
+					{
+						Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 - height, rectView.right * 0.75, rectView.bottom * 0.14 - height);
+					}
+					else
+					{
+						Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 - height, rectView.right * 0.15 + (rectView.right * 0.6) * percent, rectView.bottom * 0.14 - height);
+					}
 				}
 				else
 				{
-					Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 + categoryBox * (i - 1) - height, rectView.right * 0.25 + rectView.right * 0.5 / i, rectView.bottom * 0.14 + categoryBox * (i - 1) - height);
+					if (percent >= 1)
+					{
+						Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 + categoryBox * (i - 1) - height, rectView.right * 0.75, rectView.bottom * 0.14 + categoryBox * (i - 1) - height);
+					}
+					else
+					{
+						Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.08 + categoryBox * (i - 1) - height, rectView.right * 0.15 + (rectView.right * 0.6) * percent, rectView.bottom * 0.14 + categoryBox * (i - 1) - height);
+					}
 				}
 			}
-
 
 			hBrush = CreateSolidBrush(RGB(223, 230, 247));
 			SelectObject(hdc, hBrush);
 
+			if (category_total_income == 0 && category_total_expense == 0)
+				percent = 0;
+			else if (category_total_expense == 0)
+				percent = 1;
+			else
+				percent = (double)category_total_expense / category_total_income;
+
+			i_percent = percent * 100;
+
+			if (percent > 1)
+			{
+				wsprintf(category_percent, TEXT("[%d%%] %d / %d"), 100, category_total_income - category_total_expense, category_total_income);
+			}
+			else
+			{
+				wsprintf(category_percent, TEXT("[%d%%] %d / %d"), i_percent, category_total_income - category_total_expense, category_total_income);
+			}
+
 			Rectangle(hdc, 0, rectView.bottom * 0.88, rectView.right *  0.78, rectView.bottom);
 			TextOut(hdc, rectView.right * 0.06, rectView.bottom * 0.835 + rectView.bottom * 0.08, "[Total]", _tcslen("[Total]"));
-			TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.89 + categoryBox / 2, "[70%] 3500 / 7000", _tcslen("[70%] 3500 / 7000"));
+			TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.89 + categoryBox / 2, category_percent, _tcslen(category_percent));
 
 			hBrush = CreateSolidBrush(RGB(255, 255, 255));
 			SelectObject(hdc, hBrush);
@@ -339,7 +415,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 			hBrush = CreateSolidBrush(RGB(133, 133, 133));
 			SelectObject(hdc, hBrush);
-			Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right * 0.55, rectView.bottom * 0.97);
+			Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right * 0.15 + (rectView.right * 0.6) * percent, rectView.bottom * 0.97);
 
 			SelectObject(hdc, oldBrush);
 			DeleteObject(hBrush);
@@ -458,7 +534,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		switch (status)
 		{
 		case 1:
-			hScrollMove(hwnd, wParam, lParam, categoryBox, cateHis_num - 7);
+			if (cate_num <= 7)
+				return 1;
+			hScrollMove(hwnd, wParam, lParam, categoryBox, cate_num - 7);
 			SetScrollPos(scroll, SB_CTL, TempPos, TRUE);
 			break;
 		case 5:
@@ -475,12 +553,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEWHEEL:
 		if (status == 1)
 		{
+			if (cate_num <= 7)
+				return 1;
 			zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 
 			TempPos = height;
 
 			if (zDelta < 0)
-				TempPos = min(categoryBox * (cateHis_num - 7), height + categoryBox);
+				TempPos = min(categoryBox * (cate_num - 7), height + categoryBox);
 			else
 				TempPos = max(0, height - categoryBox);
 
