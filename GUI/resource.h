@@ -9,10 +9,12 @@
 #define IDC_EDIT_YEAR                   1001
 #define IDC_EDIT_MONTH                  1002
 #define IDC_EDIT_DAY                    1003
+#define IDC_EDIT_HOUR                   1004
 #define IDC_COMBO_CATEGORY              1005
 #define IDC_RADIO_EXPENSE               1006
 #define IDC_RADIO_INCOME                1007
 #define IDC_COMBO_HOUR                  1008
+#define IDC_EDIT_MINUTE                 1008
 #define IDC_COMBO_MINUTE                1009
 #define IDC_EDIT_MONEY                  1011
 #define IDC_EDIT_MEMO                   1012

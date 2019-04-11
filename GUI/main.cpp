@@ -99,6 +99,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		__Create_dir(MASTER);
 		__Create_index_file();
 		__Set_calender();
+		cate_num = __Get_all_file(category_name, MASTER);
+		for (int i = 0; i < cate_num; i++)
+		{
+			for (int j = 0; j < 4; j++)
+				category_name[i].pop_back();
+		}
 		GetClientRect(hwnd, &rectView);
 		hButton1 = CreateWindow(TEXT("button"), TEXT("카테고리"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)1, hInst, NULL);
 		hButton2 = CreateWindow(TEXT("button"), TEXT("통계"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)2, hInst, NULL);
@@ -659,36 +665,17 @@ void DrawLine(HDC hdc, RECT rectView)
 	LineTo(hdc, rectView.right, rectView.bottom * 0.847);
 }
 
-BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-	HWND hCombo;
-	char hArr[][12] = { "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12" };
-	char mArr[][60] = { "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12",
-		"13", "14", "15" ,"16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",
-		"32", "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
-		"51", "52", "53", "54", "55", "56", "57", "58", "59" };
 
 	switch (iMsg)
 	{
 	case WM_INITDIALOG:
-		CheckRadioButton(hDlg, IDC_RADIO_INCOME, IDC_RADIO_EXPENSE, IDC_RADIO_INCOME);
-
-		SetDlgItemInt(hDlg, IDC_EDIT_YEAR, today_year_i, TRUE);
-		SetDlgItemInt(hDlg, IDC_EDIT_MONTH, today_month_i, TRUE);
-		SetDlgItemInt(hDlg, IDC_EDIT_DAY, today_day_i, TRUE);
-
-		hCombo = GetDlgItem(hDlg, IDC_COMBO_HOUR);
-		for (int i = 0; i < 12; i++)
-			SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)hArr[i]);
-		hCombo = GetDlgItem(hDlg, IDC_COMBO_MINUTE);
-		for (int i = 0; i <= 59; i++)
-			SendMessage(hCombo, CB_ADDSTRING, 0, (LPARAM)mArr[i]);
 		return 1;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
 		case IDOK:
-			MessageBox(hDlg, "Ho", "Ho", MB_OK);
 			break;
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
@@ -699,19 +686,127 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
+	int year = 0, month = 0, day = 0, a_day;
+	std::string day_s;
+	char c_name[21];
+	bool ie;
+	int hour = 0, minute = 0;
+	std::string hour_s, minute_s;
+	int money = 0;
+	char memo[41];
+	std::string check;
+	HWND con;
 	switch (iMsg)
 	{
 	case WM_INITDIALOG:
+		SetDlgItemInt(hDlg, IDC_EDIT_YEAR, today_year_i, TRUE);
+		SetDlgItemInt(hDlg, IDC_EDIT_MONTH, today_month_i, TRUE);
+		SetDlgItemInt(hDlg, IDC_EDIT_DAY, today_day_i, TRUE);
+
+		con = GetDlgItem(hDlg, IDC_RADIO_INCOME);
+		if (SendMessage(con, BM_GETCHECK, 0, 0) == BST_UNCHECKED)
+		{
+			SendMessage(con, BM_SETCHECK, BST_CHECKED, 0);
+		}
+
+		con = GetDlgItem(hDlg, IDC_COMBO_CATEGORY);
+		for (int i = 0; i < cate_num; i++)
+		{
+			SendMessage(con, CB_ADDSTRING, 0, (LPARAM)category_name[i].c_str());
+		}
+		//CheckRadioButton(hDlg, IDC_RADIO_INCOME, IDC_RADIO_EXPENSE, IDC_RADIO_EXPENSE);
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
+		case IDOK:
+			year = GetDlgItemInt(hDlg, IDC_EDIT_YEAR, NULL, TRUE);
+			month = GetDlgItemInt(hDlg, IDC_EDIT_MONTH, NULL, TRUE);
+			day = GetDlgItemInt(hDlg, IDC_EDIT_DAY, NULL, TRUE);
+			if (year < 2000 || year > today_year_i + 1)
+			{
+				MessageBox(hDlg, "올바른 날짜를 입력하세요", "Error", MB_OK);
+				break;
+			}
+			else if (month < 1 || month > 12)
+			{
+				MessageBox(hDlg, "올바른 날짜를 입력하세요", "Error", MB_OK);
+				break;
+			}
+			a_day = __Maximum_day(month, year);
+			if (day < 1 || day > a_day)
+			{
+				MessageBox(hDlg, "올바른 날짜를 입력하세요", "Error", MB_OK);
+				break;
+			}
+
+			if (day < 10)
+			{
+				day_s = '0' + std::to_string(day);
+			}
+
+			GetDlgItemText(hDlg, IDC_COMBO_CATEGORY, c_name, 20);
+			check = c_name;
+			if (check == "")
+			{
+				MessageBox(hDlg, "카테고리 이름을 선택하세요.", "ERROR", MB_OK);
+				break;
+			}
+
+			if (IsDlgButtonChecked(hDlg, IDC_RADIO_INCOME) == 1)
+			{
+				ie = INCOME;
+			}
+			else if (IsDlgButtonChecked(hDlg, IDC_RADIO_EXPENSE) == 1)
+			{
+				ie = EXPENSE;
+			}
+			else
+			{
+				MessageBox(hDlg, "수입, 지출 중 하나를 선택하세요.", "Error", MB_OK);
+				break;
+			}
+
+			hour = GetDlgItemInt(hDlg, IDC_EDIT_HOUR, NULL, TRUE);	
+			minute = GetDlgItemInt(hDlg, IDC_EDIT_MINUTE, NULL, TRUE);
+			if (hour < 0 || hour > 23)
+			{
+				MessageBox(hDlg, "올바른 시간을 입력하세요", "Error", MB_OK);
+				break;
+			}
+			else if (minute < 0 || minute > 59)
+			{
+				MessageBox(hDlg, "올바른 시간을 입력하세요", "Error", MB_OK);
+				break;
+			}
+
+			if (hour < 10)
+			{
+				hour_s = '0' + std::to_string(hour);
+			}
+			
+			if (minute < 10)
+			{
+				minute_s = '0' + std::to_string(minute);
+			}
+
+			money = GetDlgItemInt(hDlg, IDC_EDIT_MONEY, NULL, TRUE);
+			if (money < 1)
+			{
+				MessageBox(hDlg, "올바른 금액을 입력하세요", "Error", MB_OK);
+				break;
+			}
+			GetDlgItemText(hDlg, IDC_EDIT_MEMO, memo, 40);
+
+			__Insert_cate_data(c_name, std::to_string(year) + '-' + std::to_string(month) + '-' + day_s + '-' + hour_s + '-' + minute_s, memo, money, ie);
+			EndDialog(hDlg, 0);
+			break;
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
 			break;
-		}
+		} 
 	}
 	return 0;
 }
