@@ -23,17 +23,23 @@ void DestroyButton();
 void DrawLine(HDC hdc, RECT rectView);
 HINSTANCE hInst;
 // 메인 = 0, 카테고리 = 1, 통계 = 2, < = 3, > = 4, Day = 5, edit = 6, dayAdd = 7, 카테고리 상세 기록 = 8
-// 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10
+// 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10, 일별 월별 카테고리별 11 12 13, 지출 수입 잔액 14 15 16 
 
-int status = 0;
+int status = 0, sub_status = 0, ieb = 0;
 HWND hButton1, hButton2, h3, h4, ccsm, editButton, dayAdd, category_His, add_category;
 HWND cate_combo;
+HWND filter1[3];
+HWND filter2[3], filter3[6];
 HWND scroll, category_page;
 HWND hwnd, dlg;
 int TempPos, height = 0;
 HFONT hFont;
 
+int selected_category;
 extern std::map<std::string, weekday> calender;
+std::vector<std::string> cate_history;
+std::string temp_cate_history[8];
+int cateHis_num;
 
 std::string current_date = __today_date();
 std::string today_year_s = current_date.substr(0, 4);
@@ -86,9 +92,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	int boxHeight = rectView.bottom * 0.1;
 	int categoryBox = rectView.bottom * 0.12;
 	int box_num = 15;
-	int cateHis_num = 15;
 	TCHAR boxNum[5];
-	TCHAR category_percent[20];
+	TCHAR category_percent[50];
 	short zDelta;
 	int category_income, category_expense, category_total_income = 0, category_total_expense = 0;
 
@@ -99,6 +104,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		__Create_dir(MASTER);
 		__Create_index_file();
 		__Set_calender();
+		if (__File_exist(MASTER + "전체") == 0)
+		{
+			__Create_category("전체", 1);
+		}
 		cate_num = __Get_all_file(category_name, MASTER);
 		for (int i = 0; i < cate_num; i++)
 		{
@@ -160,13 +169,37 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case 2:
 			DestroyButton();
 			status = 2;
+			selected_month = today_month_i;
+			selected_year = today_year_i;
 			InvalidateRgn(hwnd, NULL, TRUE);
 			hButton1 = CreateWindow(TEXT("button"), TEXT("카테고리"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)1, hInst, NULL);
 			hButton2 = CreateWindow(TEXT("button"), TEXT("메인 페이지"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)0, hInst, NULL);
 			h3 = CreateWindow(TEXT("button"), TEXT("<"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)3, hInst, NULL);
 			h4 = CreateWindow(TEXT("button"), TEXT(">"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.9, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)4, hInst, NULL);
+			filter1[0] = CreateWindow(TEXT("button"), TEXT("일별"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.14, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)11, hInst, NULL);
+			filter1[1] = CreateWindow(TEXT("button"), TEXT("월별"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.23, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)12, hInst, NULL);
+			filter1[2] = CreateWindow(TEXT("button"), TEXT("카테고리별"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.32, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)13, hInst, NULL);
+			
+			CheckRadioButton(hwnd, 11, 13, 11 + sub_status);
+
+			if (sub_status != 2)
+			{
+				filter2[0] = CreateWindow(TEXT("button"), TEXT("지출"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.49, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)14, hInst, NULL);
+				filter2[1] = CreateWindow(TEXT("button"), TEXT("수입"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.6, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)15, hInst, NULL);
+				filter2[2] = CreateWindow(TEXT("button"), TEXT("잔액"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.71, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)16, hInst, NULL);
+				CheckRadioButton(hwnd, 14, 16, 14 + ieb);
+			}
+			else
+			{
+				filter3[0] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.5, rectView.bottom * 0.06, 70, 20, hwnd, (HMENU)17, hInst, NULL);
+				filter3[1] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.6, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)18, hInst, NULL);
+				filter3[2] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.67, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)19, hInst, NULL);
+				filter3[3] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.5, rectView.bottom * 0.1, 70, 20, hwnd, (HMENU)20, hInst, NULL);
+				filter3[4] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.6, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)21, hInst, NULL);
+				filter3[5] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.67, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)22, hInst, NULL);
+			}
 			break;
-		case 3:
+		case 5:
 			switch (status)
 			{
 			case 0:
@@ -203,7 +236,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
-		case 5:
+		case 3:
 			DestroyButton();
 			height = 0;
 			status = 5;
@@ -223,22 +256,87 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			DestroyButton();
 			height = 0;
 			status = 8;
+			cate_history.clear();
+			cateHis_num = 0;
+
 			scroll = CreateWindow(TEXT("scrollbar"), NULL, WS_CHILD | WS_VISIBLE | SBS_VERT, rectView.right * 0.98, rectView.bottom * 0.05, rectView.right * 0.02, rectView.bottom - rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
 			cate_combo = CreateWindow(TEXT("combobox"), NULL, WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST, rectView.right * 0.12, rectView.bottom * 0.91, rectView.right * 0.13, rectView.bottom * 0.2, hwnd, (HMENU)9, hInst, NULL);
 			for (int i = 0; i < cate_num; i++)
 			{
 				SendMessage(cate_combo, CB_ADDSTRING, NULL, (LPARAM)category_name[i].c_str());
 			}
-			SendMessage(cate_combo, CB_SETCURSEL, 0, 0);
-			InvalidateRgn(hwnd, NULL, TRUE);
-			SetScrollRange(scroll, SB_CTL, 0, boxHeight * (cateHis_num - 8), TRUE);
+			SendMessage(cate_combo, CB_SETCURSEL, selected_category, 0);
+			int t;
+			t = 0;
+			while (__Get_data(temp_cate_history, category_name[selected_category], today_year_s + '-' + today_month_s, t * 8, 8) != -2)
+			{
+				for (int i = 0; i < 8; i++)
+				{
+					cate_history.push_back(temp_cate_history[i]);
+					temp_cate_history[i] = "";
+				}
+				t++;
+			}
+			cateHis_num += t * 8;
+			t = 0;
+			while (temp_cate_history[t] != "")
+			{
+				cate_history.push_back(temp_cate_history[t]);
+				t++;
+			}
+			cateHis_num += t;
+			if (cateHis_num > 8)
+			{
+				SetScrollRange(scroll, SB_CTL, 0, boxHeight * (cateHis_num - 8), TRUE);
+			}
+			else
+			{
+				SetScrollRange(scroll, SB_CTL, 0, 0, TRUE);
+			}
 			SetScrollPos(scroll, SB_CTL, 0, TRUE);
+			InvalidateRgn(hwnd, NULL, TRUE);
+			break;
+		case 9:
+			switch (HIWORD(wParam)) {
+			case CBN_SELCHANGE:
+				selected_category = SendMessage(cate_combo, CB_GETCURSEL, 0, 0);
+				SendMessage(hwnd, WM_COMMAND, 8, NULL);
+				break;
+			}
 			break;
 		case 10:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_ADD_DELETE_CATEGORY), hwnd, (DLGPROC)Dlg_DeleteCategory);
 			SendMessage(hwnd, WM_COMMAND, 1, NULL);
 			break;
+		case 11:
+			sub_status = 0;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 12:
+			sub_status = 1;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 13:
+			sub_status = 2;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 14:
+			ieb = 0;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 15:
+			ieb = 1;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 16:
+			ieb = 2;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
 		}
+		break;
+	case WM_CTLCOLORSTATIC:
+		return (LRESULT)CreateSolidBrush(RGB(255, 255, 255));
+		break;
 	case WM_PAINT:
 	{
 		hdc = BeginPaint(hwnd, &ps);
@@ -428,9 +526,30 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		case 2:
+			selected_month = __Maximum_day(selected_month, selected_year);
+
 			DrawLine(hdc, rectView);
-			break;
-		case 3:
+			Rectangle(hdc, 0, rectView.bottom * 0.05, rectView.right * 0.1, rectView.bottom * 0.14);
+			Rectangle(hdc, rectView.right * 0.1, rectView.bottom * 0.05, rectView.right * 0.45, rectView.bottom * 0.14);
+			Rectangle(hdc, rectView.right * 0.45, rectView.bottom * 0.05, rectView.right * 0.8, rectView.bottom * 0.14);
+			Rectangle(hdc, 0, rectView.bottom * 0.05, rectView.right * 0.1, rectView.bottom * 0.14);
+			TextOut(hdc, rectView.right * 0.035, rectView.bottom * 0.085, "필터", _tcslen("필터"));
+
+			switch (sub_status)
+			{
+			case 0:
+				break;
+			case 1:
+				break;
+			case 2:
+				TextOut(hdc, rectView.right * 0.56, rectView.bottom * 0.065, "년", _tcslen("년"));
+				TextOut(hdc, rectView.right * 0.64, rectView.bottom * 0.065, "월", _tcslen("월"));
+				TextOut(hdc, rectView.right * 0.71, rectView.bottom * 0.065, "일 부터", _tcslen("일 부터"));
+				TextOut(hdc, rectView.right * 0.56, rectView.bottom * 0.105, "년", _tcslen("년"));
+				TextOut(hdc, rectView.right * 0.64, rectView.bottom * 0.105, "월", _tcslen("월"));
+				TextOut(hdc, rectView.right * 0.71, rectView.bottom * 0.105, "일 까지", _tcslen("일 까지"));
+				break;
+			}
 			break;
 		case 5:
 			hBrush = CreateSolidBrush(RGB(250, 243, 219));
@@ -475,34 +594,84 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case 8:
 			hBrush = CreateSolidBrush(RGB(250, 243, 219));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+			std::string cate_history_info[4];
+			std::string cate_history_date[5];
+			std::string cate_history_date_complete;
+			char str_buff[100];
+			char *tok;
+			int str_cnt;
+			int flag;
+			TCHAR total_m[50];
+			std::string::size_type n;
+			int total_money;
+			total_money = 0;
+
+			total_money = __Get_total_income(category_name[selected_category], today_year_s + '-' + today_month_s) - __Get_total_expense(category_name[selected_category], today_year_s + '-' + today_month_s);
 
 			for (int i = 1; i <= cateHis_num; i++)
 			{
+				strcpy(str_buff, cate_history[i - 1].c_str());
+				tok = strtok(str_buff, "|");
+				str_cnt = 0;
+				while (tok != nullptr) {
+					cate_history_info[str_cnt++] = std::string(tok);
+					tok = strtok(nullptr, "|");
+				}
+
+				strcpy(str_buff, cate_history_info[1].c_str());
+				tok = strtok(str_buff, "-");
+				str_cnt = 0;
+				while (tok != nullptr) {
+					cate_history_date[str_cnt++] = std::string(tok);
+					tok = strtok(nullptr, "-");
+				}
+
+				cate_history_info[2].insert(0, "[");
+				cate_history_info[2].append("]");
+
+				cate_history_date_complete = "<" + cate_history_date[0] + " " + cate_history_date[1] + "-" +
+					cate_history_date[2] + " " + cate_history_date[3] + ":" + cate_history_date[4] + ">";
+
+				n = cate_history_info[3].find("+");
+
+				cate_history_info[3].erase(0, 1);
+
+				cate_history_info[3].insert(0, "\\ ");
+
 				if (i == 1)
 				{
 					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight - height);
 					SetBkMode(hdc, TRANSPARENT);
-					TextOut(hdc, rectView.right * 0.12, rectView.bottom * 0.04 + boxHeight / 2 - height, "< 2019-01-23 22:11 >", _tcslen("< 2019-01-23 22:11 >"));
-					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight / 2 - height, "\ 1500", _tcslen("\ 1500"));
-					TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight / 2 - height, "[지출]", _tcslen("[지출]"));
-					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight / 2 - height, "[Pay Back]", _tcslen("[Pay Back]"));
+					TextOut(hdc, rectView.right * 0.12, rectView.bottom * 0.04 + boxHeight / 2 - height, cate_history_date_complete.c_str(), _tcslen(cate_history_date_complete.c_str()));
+					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight / 2 - height, cate_history_info[3].c_str(), _tcslen(cate_history_info[3].c_str()));
+					if (n == std::string::npos)
+						TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight / 2 - height, "[지출]", _tcslen("[지출]"));
+					else
+						TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight / 2 - height, "[수입]", _tcslen("[수입]"));
+
+					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight / 2 - height, cate_history_info[2].c_str(), _tcslen(cate_history_info[2].c_str()));
 				}
 				else
 				{
 					Rectangle(hdc, 0, rectView.bottom * 0.05 + boxHeight * (i - 1) - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight * i - height);
 					SetBkMode(hdc, TRANSPARENT);
-					TextOut(hdc, rectView.right * 0.12, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "< 2019-01-23 22:11 >", _tcslen("< 2019-01-23 22:11 >"));
-					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "\ 1500", _tcslen("\ 1500"));
-					TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[수입]", _tcslen("[수입]"));
-					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[Pay Back]", _tcslen("[Pay Back]"));
+					TextOut(hdc, rectView.right * 0.12, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, cate_history_date_complete.c_str(), _tcslen(cate_history_date_complete.c_str()));
+					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, cate_history_info[3].c_str(), _tcslen(cate_history_info[3].c_str()));
+					if (n == std::string::npos)
+						TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[지출]", _tcslen("[지출]"));
+					else
+						TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[수입]", _tcslen("[수입]"));
+					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, cate_history_info[2].c_str(), _tcslen(cate_history_info[2].c_str()));
 				}
 			}
+
+			wsprintf(total_m, "전체 잔액 : %d", total_money);
 			hBrush = CreateSolidBrush(RGB(133, 133, 133));
 			SelectObject(hdc, hBrush);
 
-
+			SetBkMode(hdc, TRANSPARENT);
 			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right *  0.98, rectView.bottom);
-			TextOut(hdc, rectView.right * 0.40, rectView.bottom * 0.85 + rectView.bottom * 0.07, "전체 잔액 : 13000", _tcslen("전체 잔액 : 13000"));
+			TextOut(hdc, rectView.right * 0.40, rectView.bottom * 0.85 + rectView.bottom * 0.07, total_m, _tcslen(total_m));
 			TextOut(hdc, rectView.right * 0.70, rectView.bottom * 0.85 + rectView.bottom * 0.07, "초기화 날짜 : 2019-01-01", _tcslen("초기화 날짜 : 2019-01-01"));
 			SelectObject(hdc, oldBrush);
 			DeleteObject(hBrush);
@@ -550,6 +719,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			SetScrollPos(scroll, SB_CTL, TempPos, TRUE);
 			break;
 		case 8:
+			if (cateHis_num <= 8)
+				return 1;
 			hScrollMove(hwnd, wParam, lParam, boxHeight, box_num - 8);
 			SetScrollPos(scroll, SB_CTL, TempPos, TRUE);
 			break;
@@ -593,6 +764,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		if (status == 8)
 		{
+			if (cateHis_num <= 8)
+				return 1;
+
 			zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 
 			TempPos = height;
@@ -600,8 +774,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			if (zDelta < 0)
 				TempPos = min(boxHeight * (cateHis_num - 8), height + boxHeight);
 			else
+			{
 				TempPos = max(0, height - boxHeight);
-
+			}
 			height = TempPos;
 
 			SetScrollPos(scroll, SB_CTL, TempPos, TRUE);
@@ -653,6 +828,13 @@ void DestroyButton()
 	DestroyWindow(category_His);
 	DestroyWindow(cate_combo);
 	DestroyWindow(add_category);
+	for (int i = 0; i < 3; i++)
+	{
+		DestroyWindow(filter1[i]);
+		DestroyWindow(filter2[i]);
+		DestroyWindow(filter3[i]);
+		DestroyWindow(filter3[i + 3]);
+	}
 }
 
 void DrawLine(HDC hdc, RECT rectView)
@@ -664,6 +846,8 @@ void DrawLine(HDC hdc, RECT rectView)
 	MoveToEx(hdc, rectView.right * 0.8 - 1, rectView.bottom * 0.847, NULL);
 	LineTo(hdc, rectView.right, rectView.bottom * 0.847);
 }
+
+//void 
 
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -689,7 +873,7 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	int year = 0, month = 0, day = 0, a_day;
-	std::string day_s;
+	std::string day_s, month_s;
 	char c_name[21];
 	bool ie;
 	int hour = 0, minute = 0;
@@ -716,7 +900,6 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		{
 			SendMessage(con, CB_ADDSTRING, 0, (LPARAM)category_name[i].c_str());
 		}
-		//CheckRadioButton(hDlg, IDC_RADIO_INCOME, IDC_RADIO_EXPENSE, IDC_RADIO_EXPENSE);
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
@@ -735,6 +918,15 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				MessageBox(hDlg, "올바른 날짜를 입력하세요", "Error", MB_OK);
 				break;
 			}
+			if (month < 10)
+			{
+				month_s = '0' + std::to_string(month);
+			}
+			else
+			{
+				month_s = std::to_string(month);
+			}
+
 			a_day = __Maximum_day(month, year);
 			if (day < 1 || day > a_day)
 			{
@@ -745,6 +937,10 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			if (day < 10)
 			{
 				day_s = '0' + std::to_string(day);
+			}
+			else
+			{
+				day_s = std::to_string(day);
 			}
 
 			GetDlgItemText(hDlg, IDC_COMBO_CATEGORY, c_name, 20);
@@ -786,10 +982,18 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			{
 				hour_s = '0' + std::to_string(hour);
 			}
+			else
+			{
+				hour_s = std::to_string(hour);
+			}
 			
 			if (minute < 10)
 			{
 				minute_s = '0' + std::to_string(minute);
+			}
+			else
+			{
+				minute_s = std::to_string(minute);
 			}
 
 			money = GetDlgItemInt(hDlg, IDC_EDIT_MONEY, NULL, TRUE);
@@ -800,7 +1004,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			GetDlgItemText(hDlg, IDC_EDIT_MEMO, memo, 40);
 
-			__Insert_cate_data(c_name, std::to_string(year) + '-' + std::to_string(month) + '-' + day_s + '-' + hour_s + '-' + minute_s, memo, money, ie);
+			__Insert_cate_data(c_name, std::to_string(year) + '-' + month_s + '-' + day_s + '-' + hour_s + '-' + minute_s, memo, money, ie);
 			EndDialog(hDlg, 0);
 			break;
 		case IDCANCEL:
@@ -814,7 +1018,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	std::string category[20];
-	int category_num;
+	int category_num = 0;
 	std::string category_name;
 	char cate_name[20];
 	int reset_date = 0;
@@ -835,6 +1039,11 @@ BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPa
 		switch (LOWORD(wParam))
 		{
 		case IDADD:
+			if (category_num == 20)
+			{
+				MessageBox(hDlg, "카테고리 최대 개수는 20개입니다.", "Error", MB_OK);
+				break;
+			}
 			GetDlgItemText(hDlg, IDC_CATEGORY, cate_name, 20);
 			reset_date = GetDlgItemInt(hDlg, IDC_RESET_DATE, NULL, FALSE);
 
