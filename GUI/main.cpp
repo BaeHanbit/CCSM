@@ -16,12 +16,14 @@
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 LRESULT hScrollMove(HWND hWnd, WPARAM wParam, LPARAM lParam, int boxHeight, int s);
 LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView);
+LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView);
 BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 void DestroyButton();
 void DrawLine(HDC hdc, RECT rectView);
 void Get_income_expense_balance_day(int year, int month);
+void Get_income_expense_balance_month(int year);
 HINSTANCE hInst;
 // 메인 = 0, 카테고리 = 1, 통계 = 2, < = 3, > = 4, Day = 5, edit = 6, dayAdd = 7, 카테고리 상세 기록 = 8
 // 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10, 일별 월별 카테고리별 11 12 13, 지출 수입 잔액 14 15 16 
@@ -54,6 +56,7 @@ int selected_month = today_month_i;
 int selected_month_day = __Maximum_day(selected_month, selected_year);
 
 int ieb_arr[3][31] = { 0, };
+int ieb_arr_year[3][12] = { 0, };
 
 int cate_num = 0;
 std::string category_name[20];
@@ -171,7 +174,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		case 2:
 			DestroyButton();
-			status = 2;
+			status = 2;	
 			cate_history.clear();
 			selected_month = today_month_i;
 			selected_year = today_year_i;
@@ -188,8 +191,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 			if (sub_status != 2)
 			{
-				filter2[0] = CreateWindow(TEXT("button"), TEXT("지출"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.49, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)14, hInst, NULL);
-				filter2[1] = CreateWindow(TEXT("button"), TEXT("수입"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.6, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)15, hInst, NULL);
+				filter2[0] = CreateWindow(TEXT("button"), TEXT("수입"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.49, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)14, hInst, NULL);
+				filter2[1] = CreateWindow(TEXT("button"), TEXT("지출"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.6, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)15, hInst, NULL);
 				filter2[2] = CreateWindow(TEXT("button"), TEXT("잔액"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.71, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)16, hInst, NULL);
 				CheckRadioButton(hwnd, 14, 16, 14 + ieb);
 			}
@@ -220,16 +223,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			case 2:
-				if (selected_month - 1 == 0)
+				switch (sub_status)
 				{
-					selected_month = 12;
+				case 0:
+					if (selected_month - 1 == 0)
+					{
+						selected_month = 12;
+						selected_year -= 1;
+						selected_month_day = __Maximum_day(selected_month, selected_year);
+					}
+					else
+					{
+						selected_month -= 1;
+						selected_month_day = __Maximum_day(selected_month, selected_year);
+					}
+					break;
+				case 1:
 					selected_year -= 1;
-					selected_month_day = __Maximum_day(selected_month, selected_year);
-				}
-				else
-				{
-					selected_month -= 1;
-					selected_month_day = __Maximum_day(selected_month, selected_year);
+					break;
 				}
 				break;
 			}
@@ -252,16 +263,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 				break;
 			case 2:
-				if (selected_month + 1 == 13)
+				switch (sub_status)
 				{
-					selected_month = 1;
+				case 0:
+					if (selected_month + 1 == 13)
+					{
+						selected_month = 1;
+						selected_year += 1;
+						selected_month_day = __Maximum_day(selected_month, selected_year);
+					}
+					else
+					{
+						selected_month += 1;
+						selected_month_day = __Maximum_day(selected_month, selected_year);
+					}
+					break;
+				case 1:
 					selected_year += 1;
-					selected_month_day = __Maximum_day(selected_month, selected_year);
-				}
-				else
-				{
-					selected_month += 1;
-					selected_month_day = __Maximum_day(selected_month, selected_year);
+					break;
 				}
 				break;
 			}
@@ -559,7 +578,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case 2:
 			selected_month_day = __Maximum_day(selected_month, selected_year);
 
-			Get_income_expense_balance_day(selected_year, selected_month);
 
 			DrawLine(hdc, rectView);
 			Rectangle(hdc, 0, rectView.bottom * 0.05, rectView.right * 0.1, rectView.bottom * 0.14);
@@ -572,9 +590,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			switch (sub_status)
 			{
 			case 0:
+				Get_income_expense_balance_day(selected_year, selected_month);
 				DrawGraph_Day(hwnd, iMsg, wParam, lParam, hdc, rectView);
 				break;
 			case 1:
+				Get_income_expense_balance_month(selected_year);
+				DrawGraph_Month(hwnd, iMsg, wParam, lParam, hdc, rectView);
 				break;
 			case 2:
 				TextOut(hdc, rectView.right * 0.56, rectView.bottom * 0.065, "년", _tcslen("년"));
@@ -1316,7 +1337,187 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 	return 0;
 }
 
+LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView)
+{
+	int i_max = 0, e_max = 0, b_max = 0, max;
+	int flag;
+	HPEN grayPen, oldPen, noPen;
+	HBRUSH hBrush, oldBrush;
+	double percent;
+	std::string year;
 
+	for (int i = 0; i < 12; i++)
+	{
+		if (ieb_arr_year[0][i] > i_max)
+		{
+			i_max = ieb_arr_year[0][i];
+		}
+
+		if (ieb_arr_year[1][i] > e_max)
+		{
+			e_max = ieb_arr_year[1][i];
+		}
+
+		if (ieb_arr_year[2][i] > b_max)
+		{
+			b_max = ieb_arr_year[2][i];
+		}
+	}
+
+	hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+	oldFont = (HFONT)SelectObject(hdc, hFont);
+	hBrush = CreateSolidBrush(RGB(151, 210, 229));
+	oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+	grayPen = CreatePen(PS_SOLID, 0, RGB(190, 190, 190));
+	oldPen = (HPEN)SelectObject(hdc, grayPen);
+	noPen = (HPEN)GetStockObject(NULL_PEN);
+
+	switch (ieb)
+	{
+	case 0:
+		flag = i_max / 1000000 + 1;
+		max = flag * 1000000;
+
+		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		year = std::to_string(selected_year) + "년";
+
+		SetTextAlign(hdc, TA_LEFT);
+		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, year.c_str(), _tcslen(year.c_str()));
+
+		SetTextAlign(hdc, TA_RIGHT);
+		hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 100000).c_str(), _tcslen(std::to_string(i * flag * 100000).c_str()));
+		}
+
+		SelectObject(hdc, grayPen);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			MoveToEx(hdc, rectView.right * 0.12, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i, NULL);
+			LineTo(hdc, rectView.right * 0.74, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i);
+		}
+
+		SelectObject(hdc, noPen);
+
+		SetTextAlign(hdc, TA_LEFT);
+
+		for (int i = 1; i <= 12; i++)
+		{
+			TextOut(hdc, rectView.right * 0.105 + rectView.right * 0.05 * i, rectView.bottom * 0.9, std::to_string(i).c_str(), _tcslen(std::to_string(i).c_str()));
+		}
+
+		for (int i = 1; i <= 12; i++)
+		{
+			if (ieb_arr_year[0][i - 1] != 0)
+			{
+				percent = 1 - (double)ieb_arr_year[0][i - 1] / max;
+				Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
+			}
+		}
+		break;
+	case 1:
+		flag = e_max / 1000000 + 1;
+		max = flag * 1000000;
+
+		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		year = std::to_string(selected_year) + "년";
+
+		SetTextAlign(hdc, TA_LEFT);
+		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, year.c_str(), _tcslen(year.c_str()));
+
+		SetTextAlign(hdc, TA_RIGHT);
+		hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 100000).c_str(), _tcslen(std::to_string(i * flag * 100000).c_str()));
+		}
+
+		SelectObject(hdc, grayPen);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			MoveToEx(hdc, rectView.right * 0.12, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i, NULL);
+			LineTo(hdc, rectView.right * 0.74, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i);
+		}
+
+		SelectObject(hdc, noPen);
+
+		SetTextAlign(hdc, TA_LEFT);
+
+		for (int i = 1; i <= 12; i++)
+		{
+			TextOut(hdc, rectView.right * 0.105 + rectView.right * 0.05 * i, rectView.bottom * 0.9, std::to_string(i).c_str(), _tcslen(std::to_string(i).c_str()));
+		}
+
+		for (int i = 1; i <= 12; i++)
+		{
+			if (ieb_arr_year[1][i - 1] != 0)
+			{
+				percent = 1 - (double)ieb_arr_year[1][i - 1] / max;
+				Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
+			}
+		}
+		break;
+	case 2:
+		flag = b_max / 1000000 + 1;
+		max = flag * 1000000;
+
+		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		year = std::to_string(selected_year) + "년";
+
+		SetTextAlign(hdc, TA_LEFT);
+		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, year.c_str(), _tcslen(year.c_str()));
+
+		SetTextAlign(hdc, TA_RIGHT);
+		hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 100000).c_str(), _tcslen(std::to_string(i * flag * 100000).c_str()));
+		}
+
+		SelectObject(hdc, grayPen);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			MoveToEx(hdc, rectView.right * 0.12, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i, NULL);
+			LineTo(hdc, rectView.right * 0.74, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i);
+		}
+
+		SelectObject(hdc, noPen);
+
+		SetTextAlign(hdc, TA_LEFT);
+
+		for (int i = 1; i <= 12; i++)
+		{
+			TextOut(hdc, rectView.right * 0.105 + rectView.right * 0.05 * i, rectView.bottom * 0.9, std::to_string(i).c_str(), _tcslen(std::to_string(i).c_str()));
+		}
+
+		for (int i = 1; i <= 12; i++)
+		{
+			if (ieb_arr_year[2][i - 1] != 0)
+			{
+				percent = 1 - (double)ieb_arr_year[2][i - 1] / max;
+				Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
+			}
+		}
+		break;
+	}
+	return 0;
+}
 
 void Get_income_expense_balance_day(int year, int month)
 {
@@ -1407,6 +1608,29 @@ void Get_income_expense_balance_day(int year, int month)
 				ieb_arr[0][std::stoi(date[2]) - 1] += std::stoi(info[3]);
 				ieb_arr[2][std::stoi(date[2]) - 1] += std::stoi(info[3]);
 			}
+		}
+	}
+}
+
+void Get_income_expense_balance_month(int year)
+{
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 12; j++)
+		{
+			ieb_arr_year[i][j] = 0;
+		}
+	}
+
+	for (int i = 1; i <= 12; i++)
+	{
+		Get_income_expense_balance_day(year, i);
+
+		for (int j = 0; j < selected_month_day; j++)
+		{
+			ieb_arr_year[0][i - 1] += ieb_arr[0][j];
+			ieb_arr_year[1][i - 1] += ieb_arr[1][j];
+			ieb_arr_year[2][i - 1] += ieb_arr[2][j];
 		}
 	}
 }
