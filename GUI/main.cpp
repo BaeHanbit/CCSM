@@ -15,12 +15,13 @@
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 LRESULT hScrollMove(HWND hWnd, WPARAM wParam, LPARAM lParam, int boxHeight, int s);
-LRESULT CALLBACK DrawGraph_1(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc);
+LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView);
 BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 void DestroyButton();
 void DrawLine(HDC hdc, RECT rectView);
+void Get_income_expense_balance_day(int year, int month);
 HINSTANCE hInst;
 // 메인 = 0, 카테고리 = 1, 통계 = 2, < = 3, > = 4, Day = 5, edit = 6, dayAdd = 7, 카테고리 상세 기록 = 8
 // 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10, 일별 월별 카테고리별 11 12 13, 지출 수입 잔액 14 15 16 
@@ -33,7 +34,7 @@ HWND filter2[3], filter3[6];
 HWND scroll, category_page;
 HWND hwnd, dlg;
 int TempPos, height = 0;
-HFONT hFont;
+HFONT hFont, oldFont;
 
 int selected_category;
 extern std::map<std::string, weekday> calender;
@@ -51,6 +52,8 @@ int today_day_i = std::stoi(today_day_s);
 int selected_year = today_year_i;
 int selected_month = today_month_i;
 int selected_month_day = __Maximum_day(selected_month, selected_year);
+
+int ieb_arr[3][31] = { 0, };
 
 int cate_num = 0;
 std::string category_name[20];
@@ -169,6 +172,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case 2:
 			DestroyButton();
 			status = 2;
+			cate_history.clear();
 			selected_month = today_month_i;
 			selected_year = today_year_i;
 			InvalidateRgn(hwnd, NULL, TRUE);
@@ -199,10 +203,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				filter3[5] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.67, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)22, hInst, NULL);
 			}
 			break;
-		case 5:
+		case 3:
 			switch (status)
 			{
 			case 0:
+				if (selected_month - 1 == 0)
+				{
+					selected_month = 12;
+					selected_year -= 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				else
+				{
+					selected_month -= 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				break;
+			case 2:
 				if (selected_month - 1 == 0)
 				{
 					selected_month = 12;
@@ -233,10 +250,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					selected_month += 1;
 					selected_month_day = __Maximum_day(selected_month, selected_year);
 				}
+				break;
+			case 2:
+				if (selected_month + 1 == 13)
+				{
+					selected_month = 1;
+					selected_year += 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				else
+				{
+					selected_month += 1;
+					selected_month_day = __Maximum_day(selected_month, selected_year);
+				}
+				break;
 			}
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
-		case 3:
+		case 5:
 			DestroyButton();
 			height = 0;
 			status = 5;
@@ -526,7 +557,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		case 2:
-			selected_month = __Maximum_day(selected_month, selected_year);
+			selected_month_day = __Maximum_day(selected_month, selected_year);
+
+			Get_income_expense_balance_day(selected_year, selected_month);
 
 			DrawLine(hdc, rectView);
 			Rectangle(hdc, 0, rectView.bottom * 0.05, rectView.right * 0.1, rectView.bottom * 0.14);
@@ -535,9 +568,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			Rectangle(hdc, 0, rectView.bottom * 0.05, rectView.right * 0.1, rectView.bottom * 0.14);
 			TextOut(hdc, rectView.right * 0.035, rectView.bottom * 0.085, "필터", _tcslen("필터"));
 
+
 			switch (sub_status)
 			{
 			case 0:
+				DrawGraph_Day(hwnd, iMsg, wParam, lParam, hdc, rectView);
 				break;
 			case 1:
 				break;
@@ -847,8 +882,6 @@ void DrawLine(HDC hdc, RECT rectView)
 	LineTo(hdc, rectView.right, rectView.bottom * 0.847);
 }
 
-//void 
-
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 
@@ -1094,9 +1127,286 @@ BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lPa
 	return 0;
 }
 
-LRESULT CALLBACK DrawGraph_1(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc)
+LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView)
 {
+	int i_max = 0, e_max = 0, b_max = 0, max;
+	int flag;
+	HPEN grayPen, oldPen, noPen;
+	HBRUSH hBrush, oldBrush;
+	double percent;
+	std::string month;
 
+	for (int i = 0; i < selected_month_day; i++)
+	{
+		if (ieb_arr[0][i] > i_max)
+		{
+			i_max = ieb_arr[0][i];
+		}
+		
+		if (ieb_arr[1][i] > e_max)
+		{
+			e_max = ieb_arr[1][i];
+		}
+
+		if (ieb_arr[2][i] > b_max)
+		{
+			b_max = ieb_arr[2][i];
+		}
+	}
+
+	hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+	oldFont = (HFONT)SelectObject(hdc, hFont);
+	hBrush = CreateSolidBrush(RGB(151, 210, 229));
+	oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+	grayPen = CreatePen(PS_SOLID, 0, RGB(190, 190, 190));
+	oldPen = (HPEN)SelectObject(hdc, grayPen);
+	noPen = (HPEN)GetStockObject(NULL_PEN);
+
+	switch (ieb)
+	{
+	case 0:
+		flag = i_max / 100000 + 1;
+		max = flag * 100000;
+
+		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		month = std::to_string(selected_month) + "월";
+
+		SetTextAlign(hdc, TA_LEFT);
+		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, month.c_str(), _tcslen(month.c_str()));
+
+		SetTextAlign(hdc, TA_RIGHT);
+		hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 10000).c_str(), _tcslen(std::to_string(i * flag * 10000).c_str()));
+		}
+		
+		SelectObject(hdc, grayPen);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			MoveToEx(hdc, rectView.right * 0.12, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i, NULL);
+			LineTo(hdc, rectView.right * 0.74, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i);
+		}
+
+		SelectObject(hdc, noPen);
+
+		SetTextAlign(hdc, TA_LEFT);
+
+		for (int i = 1; i <= selected_month_day; i++)
+		{
+			TextOut(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, rectView.bottom * 0.9, std::to_string(i).c_str(), _tcslen(std::to_string(i).c_str()));
+		}
+
+		for (int i = 1; i <= selected_month_day; i++)
+		{
+			if (ieb_arr[0][i - 1] != 0)
+			{
+				percent = 1 - (double)ieb_arr[0][i - 1] / max;
+				Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
+			}
+		}
+		break;
+	case 1:
+		flag = e_max / 100000 + 1;
+		max = flag * 100000;
+
+		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		month = std::to_string(selected_month) + "월";
+
+		SetTextAlign(hdc, TA_LEFT);
+		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, month.c_str(), _tcslen(month.c_str()));
+
+		SetTextAlign(hdc, TA_RIGHT);
+		hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 10000).c_str(), _tcslen(std::to_string(i * flag * 10000).c_str()));
+		}
+
+		SelectObject(hdc, grayPen);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			MoveToEx(hdc, rectView.right * 0.12, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i, NULL);
+			LineTo(hdc, rectView.right * 0.74, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i);
+		}
+		SelectObject(hdc, noPen);
+
+		SetTextAlign(hdc, TA_LEFT);
+
+		for (int i = 1; i <= selected_month_day; i++)
+		{
+			TextOut(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, rectView.bottom * 0.9, std::to_string(i).c_str(), _tcslen(std::to_string(i).c_str()));
+		}
+
+		for (int i = 1; i <= selected_month_day; i++)
+		{
+			if (ieb_arr[1][i - 1] != 0)
+			{
+				percent = 1 - (double)ieb_arr[1][i - 1] / max;
+				Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
+			}
+		}
+		break;
+	case 2:
+		flag = b_max / 100000 + 1;
+		max = flag * 100000;
+
+		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		month = std::to_string(selected_month) + "월";
+
+		SetTextAlign(hdc, TA_LEFT);
+		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, month.c_str(), _tcslen(month.c_str()));
+
+		SetTextAlign(hdc, TA_RIGHT);
+		hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+		SelectObject(hdc, hFont);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 10000).c_str(), _tcslen(std::to_string(i * flag * 10000).c_str()));
+		}
+
+		SelectObject(hdc, grayPen);
+
+		for (int i = 0; i <= 10; i++)
+		{
+			MoveToEx(hdc, rectView.right * 0.12, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i, NULL);
+			LineTo(hdc, rectView.right * 0.74, rectView.bottom * 0.89 - (rectView.bottom * 0.065) * i);
+		}
+		SelectObject(hdc, noPen);
+
+		SetTextAlign(hdc, TA_LEFT);
+
+		for (int i = 1; i <= selected_month_day; i++)
+		{
+			TextOut(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, rectView.bottom * 0.9, std::to_string(i).c_str(), _tcslen(std::to_string(i).c_str()));
+		}
+
+		for (int i = 1; i <= selected_month_day; i++)
+		{
+			if (ieb_arr[2][i - 1] != 0)
+			{
+				percent = 1 - (double)ieb_arr[2][i - 1] / max;
+				Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
+			}
+		}
+		break;
+	}
+
+	SelectObject(hdc, oldFont);
+	DeleteObject(hFont);
+	SelectObject(hdc, oldBrush);
+	DeleteObject(hBrush);
+	SelectObject(hdc, oldPen);
+	DeleteObject(grayPen);
+	DeleteObject(noPen);
 
 	return 0;
+}
+
+
+
+void Get_income_expense_balance_day(int year, int month)
+{
+	std::string year_s, month_s;
+	std::string info[4], date[5];
+	int t;
+	char str_buff[100];
+	char *tok;
+	int str_cnt;
+	std::string::size_type n;
+	std::string location;
+
+	year_s = std::to_string(year);
+
+	for (int i = 0; i < 3; i++)
+	{
+		for (int j = 0; j < 31; j++)
+		{
+			ieb_arr[i][j] = 0;
+		}
+	}
+
+	if (month < 10)
+	{
+		month_s = '0' + std::to_string(month);
+	}
+	else
+	{
+		month_s = std::to_string(month);
+	}
+
+	for (int i = 0; i < cate_num; i++)
+	{
+		cate_history.clear();
+		cateHis_num = 0;
+		t = 0;
+		location = CATEGORY + category_name[i] + '/' + year_s + '-' + month_s + ".txt";
+		if (__File_exist(location) == 0)
+			continue;
+
+		while (__Get_data(temp_cate_history, category_name[i], year_s + '-' + month_s, t * 8, 8) != -2)
+		{
+			for (int i = 0; i < 8; i++)
+			{
+				cate_history.push_back(temp_cate_history[i]);
+				temp_cate_history[i] = "";
+			}
+			t++;
+		}
+		cateHis_num += t * 8;
+		t = 0;
+		while (temp_cate_history[t] != "")
+		{
+			cate_history.push_back(temp_cate_history[t]);
+			t++;
+		}
+		cateHis_num += t;
+
+		for (int j = 0; j < cateHis_num; j++)
+		{
+			strcpy(str_buff, cate_history[j].c_str());
+			tok = strtok(str_buff, "|");
+			str_cnt = 0;
+			while (tok != nullptr) {
+				info[str_cnt++] = std::string(tok);
+				tok = strtok(nullptr, "|");
+			}
+
+			strcpy(str_buff, info[1].c_str());
+			tok = strtok(str_buff, "-");
+			str_cnt = 0;
+			while (tok != nullptr) {
+				date[str_cnt++] = std::string(tok);
+				tok = strtok(nullptr, "-");
+			}
+
+			n = info[3].find("+");
+
+			info[3].erase(0, 1);
+
+			if (n == std::string::npos)
+			{
+				ieb_arr[1][std::stoi(date[2]) - 1] += std::stoi(info[3]);
+				ieb_arr[2][std::stoi(date[2]) - 1] -= std::stoi(info[3]);
+			}
+			else
+			{
+				ieb_arr[0][std::stoi(date[2]) - 1] += std::stoi(info[3]);
+				ieb_arr[2][std::stoi(date[2]) - 1] += std::stoi(info[3]);
+			}
+		}
+	}
 }
