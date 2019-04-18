@@ -109,13 +109,13 @@ void __Remove_category_dir(std::string name)
 
 		std::string s_year;
 		std::string s_mon;
-		
+
 		char temp[100] = { 0 };
 		rFile.getline(temp, 100);
-		
+
 		for (int i = 3; i <= 6; i++)
 		{
-			 s_year += temp[i];
+			s_year += temp[i];
 		}
 		for (int i = 8; i <= 9; i++)
 		{
@@ -130,10 +130,10 @@ void __Remove_category_dir(std::string name)
 		int current_year = tm.tm_year + 1900;
 		int current_mon = tm.tm_mon + 1;
 		int cnt_of_txt = (current_year - year) * 12 - month + current_mon + 1;
-		std::string* buffer = new std::string[cnt_of_txt*10];
-		
+		std::string * buffer = new std::string[cnt_of_txt * 10];
+
 		int cnt = __Get_all_file(buffer, directory_location);
-		
+
 		for (int i = 0; i < cnt_of_txt; i++)
 		{
 			std::string file_location = directory_location + "/" + buffer[i];
@@ -166,17 +166,17 @@ void __Remove_category(std::string name)
 	입력 받은 버퍼에, 해당 경로(디렉토리)안의 모든 txt파일 정보를 담아줌
 	이때 버퍼를 배열로 받음으로, 배열 크기를 알아야함
 */
-int __Get_all_file(std::string* buffer, std::string location)
+int __Get_all_file(std::string * buffer, std::string location)
 {
 	_finddatai64_t c_file;
 	intptr_t hFile;
 	std::string temp_location = location + "/*.txt";
 	int cnt = 0;
 
-	if ((hFile = _findfirsti64(temp_location.c_str(), &c_file)) == -1L) 
+	if ((hFile = _findfirsti64(temp_location.c_str(), &c_file)) == -1L)
 	{
 		return -1;
-	} 
+	}
 	else
 	{
 		do
@@ -184,7 +184,7 @@ int __Get_all_file(std::string* buffer, std::string location)
 			buffer[cnt++] = c_file.name;
 		} while (_findnexti64(hFile, &c_file) == 0);
 		_findclose(hFile);
-	} 
+	}
 
 	return cnt;
 }
@@ -194,7 +194,7 @@ int __Get_all_file(std::string* buffer, std::string location)
 */
 const int __Category_month_file_cnt(std::string category_name)
 {
-	std::string location = MASTER +category_name + ".txt";
+	std::string location = MASTER + category_name + ".txt";
 	std::ifstream rFile(location, std::ios::in);
 	rFile.seekg(0, std::ios::beg);
 
@@ -210,15 +210,15 @@ const int __Category_month_file_cnt(std::string category_name)
 }
 
 /*
-	해당 카테고리에 수입,지출 기록을 추가한다	
+	해당 카테고리에 수입,지출 기록을 추가한다
 */
 void __Insert_cate_data(std::string category_name, std::string time, std::string memo, int cost, bool type)
 {
-	std::string today = __today_date();
-	today = today.substr(0, 7);
-	std::string location = CATEGORY + category_name + "/" + today;
+	//std::string today = __today_date();
+	std::string current_month = time.substr(0, 7);
+	std::string location = CATEGORY + category_name + "/" + current_month;
 
-	if (__File_exist(location + ".txt")){}
+	if (__File_exist(location + ".txt")) {}
 	else
 	{
 		__Create_txt_file(location);
@@ -241,17 +241,17 @@ void __Insert_cate_data(std::string category_name, std::string time, std::string
 	wFile.seekp(0, std::ios::end);
 	wFile << content << std::endl;
 	wFile.seekp(0, std::ios::beg);
-	
+
 	//Category month file 양식 : Total Income | Total Expense
 	if (type == INCOME)
 	{
-		int temp = __Get_total_income(category_name, today);
-		__Set_total_income(category_name, today, temp+cost);
+		int temp = __Get_total_income(category_name, current_month);
+		__Set_total_income(category_name, current_month, temp + cost);
 	}
 	else
 	{
-		int temp = __Get_total_expense(category_name, today);
-		__Set_total_expense(category_name, today, temp + cost);
+		int temp = __Get_total_expense(category_name, current_month);
+		__Set_total_expense(category_name, current_month, temp + cost);
 	}
 
 	wFile.close();
@@ -267,7 +267,7 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
 	std::ifstream rFile(location, std::ios::in);
 	rFile.seekg(0, std::ios::beg);
-	
+
 
 	std::vector<std::string> record_list;
 	std::string buffer;
@@ -279,7 +279,7 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 
 	for (int i = 0, buffer_index = 0; !rFile.eof(); i++)
 	{
-		if (flag_save==false)
+		if (flag_save == false)
 		{
 			temp_delete_point = rFile.tellg();
 		}
@@ -307,13 +307,13 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 	rFile.close();
 
 
-	if (flag_save==false)
+	if (flag_save == false)
 	{
 		return -1;
 	}
 	else
 	{
-		FILE *fp = fopen(location.c_str(), "a+");
+		FILE* fp = fopen(location.c_str(), "a+");
 		chsize(fileno(fp), delete_point);
 		fclose(fp);
 
@@ -380,7 +380,7 @@ int __Get_total_income(std::string category_name, std::string which_month)
 	std::ifstream rFile(location);
 	std::string income;
 	std::getline(rFile, income);
-	
+
 	for (int i = 0; i < income.length(); i++)
 	{
 		if (income[i] == '|')
@@ -407,7 +407,7 @@ void __Set_total_income(std::string category_name, std::string which_month, int 
 
 
 	std::getline(rFile, buffer);
-	for (int i = 0; i <=buffer.length(); i++)
+	for (int i = 0; i <= buffer.length(); i++)
 	{
 		if (buffer[i] == '|')
 		{
@@ -480,7 +480,7 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 {
 	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
 	std::ofstream wFile(location, std::ios::in | std::ios::out);
-	std::ifstream rFile(location,std::ios::in);
+	std::ifstream rFile(location, std::ios::in);
 	std::string buffer;
 	std::string income;
 	std::string meta_data;
@@ -488,9 +488,9 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 
 
 	std::getline(rFile, buffer);
-	for (int i = 0; buffer[i]!='|'; i++)
+	for (int i = 0; buffer[i] != '|'; i++)
 	{
-			income += buffer[i];
+		income += buffer[i];
 	}
 	int temp_income = std::stoi(income);
 	income = std::to_string(temp_income);
@@ -528,7 +528,7 @@ void __Set_total_expense(std::string category_name, std::string which_month, int
 		newFile.close();
 		rFile.close();
 	}
-}	
+}
 
 /*
 	Parameter
@@ -564,7 +564,7 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 
 		while (!rFile.eof())
 		{
-			std::getline(rFile,buffer);
+			std::getline(rFile, buffer);
 
 			try
 			{
@@ -574,7 +574,7 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 			{
 				break;
 			}
-			
+
 			if (__Compare_date(date, start_date) != 1 && __Compare_date(date, end_date) != 2)
 			{
 				if (flag == INCOME)
@@ -622,7 +622,7 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 	-1 : 시작 인덱스 값이 오버플로우
 	-2 : cnt 값이 오버플로우
 */
-const int __Get_data(std::string* data_buffer, std::string category_name, std::string which_month, int start_index, int cnt)
+const int __Get_data(std::string * data_buffer, std::string category_name, std::string which_month, int start_index, int cnt)
 {
 	std::string location = CATEGORY + category_name + "/" + which_month + ".txt";
 	std::ifstream rFile(location, std::ios::in);
@@ -631,7 +631,7 @@ const int __Get_data(std::string* data_buffer, std::string category_name, std::s
 	std::string metadata;
 	std::getline(rFile, metadata);
 
-	for (int i = 0; i < start_index-1; i++)
+	for (int i = 0; i < start_index - 1; i++)
 	{
 		if (rFile.eof() == true) { return-1; }
 		std::string buffer;
@@ -646,7 +646,7 @@ const int __Get_data(std::string* data_buffer, std::string category_name, std::s
 	return 0;
 }
 
-void __Get_day_record(std::vector<std::string>& day_record ,std::string date)
+void __Get_day_record(std::vector<std::string> & day_record, std::string date)
 {
 	std::string location = MASTER;
 	std::string categories[MAX_CATEGORY_NUMBER];
@@ -686,7 +686,7 @@ void __Get_day_record(std::vector<std::string>& day_record ,std::string date)
 
 
 
-	
+
 	delete[] file_location;
 }
 
@@ -701,6 +701,6 @@ const int __Get_reset_date(std::string category_name)
 
 	std::string metadata;
 	std::getline(rFile, metadata);
-	
+
 	return std::stoi(metadata.substr(0, 2));
 }
