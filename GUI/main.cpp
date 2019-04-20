@@ -17,32 +17,45 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam);
 LRESULT hScrollMove(HWND hWnd, WPARAM wParam, LPARAM lParam, int boxHeight, int s);
 LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView);
 LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView);
+LRESULT CALLBACK DrawGraph_Pie(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView);
 BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK Dlg_DeleteCategory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam);
 void DestroyButton();
 void DrawLine(HDC hdc, RECT rectView);
 void Get_income_expense_balance_day(int year, int month);
+void set_balance();
 void Get_income_expense_balance_month(int year);
+void Get_total_income_category(std::string from_date, std::string to_date);
+bool Is_available_date(int year, int month, int day);
 HINSTANCE hInst;
 // 메인 = 0, 카테고리 = 1, 통계 = 2, < = 3, > = 4, Day = 5, edit = 6, dayAdd = 7, 카테고리 상세 기록 = 8
 // 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10, 일별 월별 카테고리별 11 12 13, 지출 수입 잔액 14 15 16 
+// search = 23, 년 월 일 17 ~ 22, 수입 지출 24 25, search 26
 
-int status = 0, sub_status = 0, ieb = 0;
+int status = 0, sub_status = 0, ieb = 0, ie = 0;
 HWND hButton1, hButton2, h3, h4, ccsm, editButton, dayAdd, category_His, add_category;
 HWND cate_combo;
+HWND day;
 HWND filter1[3];
-HWND filter2[3], filter3[6];
+HWND filter2[3], filter3[6], filter4[2];
+std::string from_date, to_date;
+char temp_date[5];
+int from_year, from_month, from_day, to_year, to_month, to_day;
 HWND scroll, category_page;
 HWND hwnd, dlg;
+HWND search;
 int TempPos, height = 0;
 HFONT hFont, oldFont;
 
 int selected_category;
 extern std::map<std::string, weekday> calender;
 std::vector<std::string> cate_history;
+std::vector<std::string> day_history;
+std::vector<std::string> complete_day_history;
 std::string temp_cate_history[8];
 int cateHis_num;
+int box_num = 0;
 
 std::string current_date = __today_date();
 std::string today_year_s = current_date.substr(0, 4);
@@ -53,10 +66,12 @@ int today_month_i = std::stoi(today_month_s);
 int today_day_i = std::stoi(today_day_s);
 int selected_year = today_year_i;
 int selected_month = today_month_i;
+int selected_day = today_day_i;
 int selected_month_day = __Maximum_day(selected_month, selected_year);
 
 int ieb_arr[3][31] = { 0, };
 int ieb_arr_year[3][12] = { 0, };
+int pie_chart[20][2] = { 0, };
 
 int cate_num = 0;
 std::string category_name[20];
@@ -97,9 +112,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	HBRUSH hBrush, oldBrush;
 	int boxHeight = rectView.bottom * 0.1;
 	int categoryBox = rectView.bottom * 0.12;
-	int box_num = 15;
 	TCHAR boxNum[5];
 	TCHAR category_percent[50];
+	TCHAR Income_expense_balance[30];
 	short zDelta;
 	int category_income, category_expense, category_total_income = 0, category_total_expense = 0;
 
@@ -198,12 +213,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			else
 			{
-				filter3[0] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.5, rectView.bottom * 0.06, 70, 20, hwnd, (HMENU)17, hInst, NULL);
-				filter3[1] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.6, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)18, hInst, NULL);
-				filter3[2] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.67, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)19, hInst, NULL);
-				filter3[3] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.5, rectView.bottom * 0.1, 70, 20, hwnd, (HMENU)20, hInst, NULL);
-				filter3[4] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.6, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)21, hInst, NULL);
-				filter3[5] = CreateWindow(TEXT("combobox"), NULL, WS_VISIBLE | WS_CHILD | CBS_DROPDOWN | ES_NUMBER, rectView.right * 0.67, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)22, hInst, NULL);
+				filter3[0] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.48, rectView.bottom * 0.06, 70, 20, hwnd, (HMENU)17, hInst, NULL);
+				filter3[1] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.58, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)18, hInst, NULL);
+				filter3[2] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.65, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)19, hInst, NULL);
+				filter3[3] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.48, rectView.bottom * 0.1, 70, 20, hwnd, (HMENU)20, hInst, NULL);
+				filter3[4] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.58, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)21, hInst, NULL);
+				filter3[5] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.65, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)22, hInst, NULL);
+				search = CreateWindow(TEXT("button"), TEXT("검색"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, rectView.right * 0.74, rectView.bottom * 0.07, rectView.right * 0.05, rectView.bottom * 0.05, hwnd, (HMENU)23, hInst, NULL);
+				filter4[0] = CreateWindow(TEXT("button"), TEXT("수입"), WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.6, rectView.bottom * 0.155, 100, 20, hwnd, (HMENU)24, hInst, NULL);
+				filter4[1] = CreateWindow(TEXT("button"), TEXT("지출"), WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, rectView.right * 0.7, rectView.bottom * 0.155, 100, 20, hwnd, (HMENU)25, hInst, NULL);
+				CheckRadioButton(hwnd, 24, 25, 24 + ie);
 			}
 			break;
 		case 3:
@@ -287,15 +306,76 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
 		case 5:
+		{
 			DestroyButton();
 			height = 0;
 			status = 5;
 			scroll = CreateWindow(TEXT("scrollbar"), NULL, WS_CHILD | WS_VISIBLE | SBS_VERT, rectView.right * 0.98, rectView.bottom * 0.05, rectView.right * 0.02, rectView.bottom - rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
 			editButton = CreateWindow(TEXT("button"), TEXT("삭제"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.83, rectView.bottom * 0.89, rectView.right * 0.1, rectView.bottom * 0.07, hwnd, (HMENU)6, hInst, NULL);
+			day = CreateWindow(TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, rectView.right * 0.1, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)-1, hInst, NULL);
+			search = CreateWindow(TEXT("button"), TEXT("검색"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.17, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)26, hInst, NULL);
+			complete_day_history.clear();
+			int t;
+			std::string location;
+			std::string info[4], date[5];
+			char str_buff[100];
+			char *tok;
+			int str_cnt;
+			int cnt;
+			std::string compare_date;
+
+			for (int i = 0; i < cate_num; i++)
+			{
+				std::string temp_day_history[8];
+				day_history.clear();
+				cnt = 0;
+				t = 0;
+				location = CATEGORY + category_name[i] + '/' + std::to_string(selected_year) + '-' + __make_perfect_day(selected_month) + ".txt";
+				if (__File_exist(location) == 0)
+					continue;
+
+				while (__Get_data(temp_day_history, category_name[i], std::to_string(selected_year) + '-' + __make_perfect_day(selected_month), t * 8, 8) != -2)
+				{
+					for (int i = 0; i < 8; i++)
+					{
+						day_history.push_back(temp_day_history[i]);
+						temp_day_history[i] = "";
+					}
+					t++;
+				}
+				cnt += t * 8;
+				t = 0;
+				while (temp_cate_history[t] != "")
+				{
+					day_history.push_back(temp_cate_history[t]);
+					t++;
+				}
+				cnt += t;
+
+				for (int j = 0; j < cnt; j++)
+				{
+					strcpy(str_buff, day_history[j].c_str());
+					tok = strtok(str_buff, "|");
+					str_cnt = 0;
+					while (tok != nullptr) {
+						info[str_cnt++] = std::string(tok);
+						tok = strtok(nullptr, "|");
+					}
+
+					compare_date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month) + '-' + __make_perfect_day(selected_day);
+
+					if (__Compare_date(compare_date, info[1].substr(0, 10)) == 0)
+					{
+						complete_day_history.push_back(day_history[j] + "|" + category_name[i]);
+					}
+				}
+			}
+			box_num = complete_day_history.size();
 			SetScrollRange(scroll, SB_CTL, 0, boxHeight * (box_num - 8), TRUE);
 			SetScrollPos(scroll, SB_CTL, 0, TRUE);
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
+		}
 		case 6:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_DELETE_DAY_HISTORY), hwnd, (DLGPROC)Dlg_DayHistory);
 			break;
@@ -382,6 +462,95 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			ieb = 2;
 			SendMessage(hwnd, WM_COMMAND, 2, 0);
 			break;
+		case 23:
+
+			GetWindowText(filter3[0], temp_date, 5);
+			from_year = std::atoi(temp_date);
+			GetWindowText(filter3[1], temp_date, 3);
+			from_month = std::atoi(temp_date);
+			GetWindowText(filter3[2], temp_date, 3);
+			from_day = std::atoi(temp_date);
+			GetWindowText(filter3[3], temp_date, 5);
+			to_year = std::atoi(temp_date);
+			GetWindowText(filter3[4], temp_date, 3);
+			to_month = std::atoi(temp_date);
+			GetWindowText(filter3[5], temp_date, 3);
+			to_day = std::atoi(temp_date);
+
+
+			if (Is_available_date(from_year, from_month, from_day) == false)
+			{
+				MessageBox(hwnd, "올바른 날짜를 입력하세요.", "Error", MB_OK);
+				break;
+			}
+			else if (Is_available_date(to_year, to_month, to_day) == false)
+			{
+				MessageBox(hwnd, "올바른 날짜를 입력하세요.", "Error", MB_OK);
+				break;
+			}
+
+			from_date = std::to_string(from_year) + "-";
+			to_date = std::to_string(to_year) + "-";
+
+			if (from_month < 10)
+			{
+				from_date.append('0' + std::to_string(from_month) + '-');
+			}
+			else
+			{
+				from_date.append(std::to_string(from_month) + '-');
+			}
+
+			if (to_month < 10)
+			{
+				to_date.append('0' + std::to_string(to_month) + '-');
+			}
+			else
+			{
+				to_date.append(std::to_string(to_month) + '-');
+			}
+
+			if (from_day < 10)
+			{
+				from_date.append('0' + std::to_string(from_day));
+			}
+			else
+			{
+				from_date.append(std::to_string(from_day));
+			}
+
+			if (to_day < 10)
+			{
+				to_date.append('0' + std::to_string(to_day));
+			}
+			else
+			{
+				to_date.append(std::to_string(to_day));
+			}
+
+			if (__Compare_date(from_date, to_date) != 1)
+			{
+				MessageBox(hwnd, "올바른 날짜 범위를 입력하세요.", "Error", MB_OK);
+				break;
+			}
+
+			Get_total_income_category(from_date, to_date);
+
+			InvalidateRgn(hwnd, NULL, TRUE);
+			break;
+		case 24:
+			ie = INCOME;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 25:
+			ie = EXPENSE;
+			SendMessage(hwnd, WM_COMMAND, 2, 0);
+			break;
+		case 26:
+			GetWindowText(day, temp_date, 3);
+			selected_day = std::stoi(temp_date);
+			SendMessage(hwnd, WM_COMMAND, 5, 0);
+			break;
 		}
 		break;
 	case WM_CTLCOLORSTATIC:
@@ -398,6 +567,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			DrawLine(hdc, rectView);
 			LONG s1 = (rectView.bottom - rectView.bottom * 0.05) / 6;
 			LONG s2 = (rectView.right - rectView.right * 0.2) / 7;
+			Get_income_expense_balance_day(selected_year, selected_month);
+			set_balance();
+			std::string compare_date;
+
+			hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
 
 			for (int i = 1; i <= 5; i++)
 			{
@@ -434,10 +608,23 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					if (flag == 1)
 					{
 						TextOut(hdc, s2 * j - s2 * 0.93, s1 * i - s1 * 0.5, std::to_string(n).c_str(), _tcslen(std::to_string(n).c_str()));
+						compare_date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month) + '-' + __make_perfect_day(n);
+						if (__Compare_date(current_date, compare_date) != 1)
+						{
+							oldFont = (HFONT)SelectObject(hdc, hFont);
+							wsprintf(Income_expense_balance, "수입 : %d", ieb_arr[0][n - 1]);
+							TextOut(hdc, s2 * j - s2 * 0.93, s1 * i - s1 * 0.5 + 30, Income_expense_balance, _tcslen(Income_expense_balance));
+							wsprintf(Income_expense_balance, "지출 : %d", ieb_arr[1][n - 1]);
+							TextOut(hdc, s2 * j - s2 * 0.93, s1 * i - s1 * 0.5 + 50, Income_expense_balance, _tcslen(Income_expense_balance));
+							wsprintf(Income_expense_balance, "잔액 : %d", ieb_arr[2][n - 1]);
+							TextOut(hdc, s2 * j - s2 * 0.93, s1 * i - s1 * 0.5 + 70, Income_expense_balance, _tcslen(Income_expense_balance));
+							SelectObject(hdc, oldFont);
+						}
 						n++;
 					}
 				}
 			}
+			DeleteObject(hFont);
 			break;
 		}
 		case 1:
@@ -576,6 +763,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		case 2:
+		{
 			selected_month_day = __Maximum_day(selected_month, selected_year);
 
 
@@ -598,31 +786,70 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				DrawGraph_Month(hwnd, iMsg, wParam, lParam, hdc, rectView);
 				break;
 			case 2:
-				TextOut(hdc, rectView.right * 0.56, rectView.bottom * 0.065, "년", _tcslen("년"));
-				TextOut(hdc, rectView.right * 0.64, rectView.bottom * 0.065, "월", _tcslen("월"));
-				TextOut(hdc, rectView.right * 0.71, rectView.bottom * 0.065, "일 부터", _tcslen("일 부터"));
-				TextOut(hdc, rectView.right * 0.56, rectView.bottom * 0.105, "년", _tcslen("년"));
-				TextOut(hdc, rectView.right * 0.64, rectView.bottom * 0.105, "월", _tcslen("월"));
-				TextOut(hdc, rectView.right * 0.71, rectView.bottom * 0.105, "일 까지", _tcslen("일 까지"));
+				Rectangle(hdc, rectView.right * 0.55, rectView.bottom * 0.14, rectView.right * 0.8, rectView.bottom * 0.2);
+				TextOut(hdc, rectView.right * 0.54, rectView.bottom * 0.065, "년", _tcslen("년"));
+				TextOut(hdc, rectView.right * 0.62, rectView.bottom * 0.065, "월", _tcslen("월"));
+				TextOut(hdc, rectView.right * 0.69, rectView.bottom * 0.065, "일 부터", _tcslen("일 부터"));
+				TextOut(hdc, rectView.right * 0.54, rectView.bottom * 0.105, "년", _tcslen("년"));
+				TextOut(hdc, rectView.right * 0.62, rectView.bottom * 0.105, "월", _tcslen("월"));
+				TextOut(hdc, rectView.right * 0.69, rectView.bottom * 0.105, "일 까지", _tcslen("일 까지"));
+
+				DrawGraph_Pie(hwnd, iMsg, wParam, lParam, hdc, rectView);
+
 				break;
 			}
 			break;
+		}
 		case 5:
+		{
 			hBrush = CreateSolidBrush(RGB(250, 243, 219));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+			char str_buff[100];
+			char *tok;
+			int str_cnt;
+			std::string info[5], date[5];
+			std::string time;
 
 			for (int i = 1; i <= box_num; i++)
 			{
+				strcpy(str_buff, complete_day_history[i - 1].c_str());
+				tok = strtok(str_buff, "|");
+				str_cnt = 0;
+				while (tok != nullptr) {
+					info[str_cnt++] = std::string(tok);
+					tok = strtok(nullptr, "|");
+				}
+
+				strcpy(str_buff,info[1].c_str());
+				tok = strtok(str_buff, "-");
+				str_cnt = 0;
+				while (tok != nullptr) {
+					date[str_cnt++] = std::string(tok);
+					tok = strtok(nullptr, "-");
+				}
+
+				time = '[' + date[3] + " : " + date[4] + ']';
+
+				info[3].insert(1, " ");
+				info[3].insert(0, "[");
+				info[3].append("]");
+
+				info[2].insert(0, "[");
+				info[2].append("]");
+
+				info[4].insert(0, "[");
+				info[4].append("]");
+
 				if (i == 1)
 				{
 					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight - height);
 					SetBkMode(hdc, TRANSPARENT);
 					wsprintf(boxNum, TEXT("%d"), i);
 					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.04 + boxHeight / 2 - height, boxNum, _tcslen(boxNum));
-					TextOut(hdc, rectView.right * 0.15, rectView.bottom * 0.04 + boxHeight / 2 - height, "[07 : 00]", _tcslen("[07 : 00]"));
-					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight / 2 - height, "[+ 1500\]", _tcslen("[+ 1500\]"));
-					TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight / 2 - height, "[전체]", _tcslen("[전체]"));
-					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight / 2 - height, "[Pay Back]", _tcslen("[Pay Back]"));
+					TextOut(hdc, rectView.right * 0.15, rectView.bottom * 0.04 + boxHeight / 2 - height, time.c_str(), _tcslen(time.c_str()));
+					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight / 2 - height, info[3].c_str(), _tcslen(info[3].c_str()));
+					TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight / 2 - height, info[4].c_str(), _tcslen(info[4].c_str()));
+					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight / 2 - height, info[2].c_str(), _tcslen(info[2].c_str()));
 				}
 				else
 				{
@@ -630,23 +857,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					SetBkMode(hdc, TRANSPARENT);
 					wsprintf(boxNum, TEXT("%d"), i);
 					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, boxNum, _tcslen(boxNum));
-					TextOut(hdc, rectView.right * 0.15, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[07 : 00]", _tcslen("[07 : 00]"));
-					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[+ 1500\]", _tcslen("[+ 1500\]"));
-					TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[전체]", _tcslen("[전체]"));
-					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, "[Pay Back]", _tcslen("[Pay Back]"));
+					TextOut(hdc, rectView.right * 0.15, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, time.c_str(), _tcslen(time.c_str()));
+					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, info[3].c_str(), _tcslen(info[3].c_str()));
+					TextOut(hdc, rectView.right * 0.55, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, info[4].c_str(), _tcslen(info[4].c_str()));
+					TextOut(hdc, rectView.right * 0.75, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, info[2].c_str(), _tcslen(info[2].c_str()));
 				}
 			}
 			hBrush = CreateSolidBrush(RGB(133, 133, 133));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
 
-
+			SetBkMode(hdc, TRANSPARENT);
 			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right *  0.98, rectView.bottom);
-			TextOut(hdc, rectView.right * 0.15, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[07 : 00]", _tcslen("[07 : 00]"));
-			TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[전체]", _tcslen("[전체]"));
-			TextOut(hdc, rectView.right * 0.65, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[Pay Back]", _tcslen("[Pay Back]"));
+			TextOut(hdc, rectView.right * 0.25, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[07 : 00]", _tcslen("[07 : 00]"));
+			TextOut(hdc, rectView.right * 0.5, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[전체]", _tcslen("[전체]"));
+			TextOut(hdc, rectView.right * 0.7, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[Pay Back]", _tcslen("[Pay Back]"));
 			SelectObject(hdc, oldBrush);
 			DeleteObject(hBrush);
 			break;
+		}
 		case 8:
 			hBrush = CreateSolidBrush(RGB(250, 243, 219));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
@@ -756,7 +984,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case 0:
 			if (mouse.x < rectView.right * 0.8 && mouse.y > rectView.bottom * 0.05)
 			{
-
+				SendMessage(hwnd, WM_COMMAND, 5, 0);
 			}
 			break;
 		}
@@ -884,12 +1112,18 @@ void DestroyButton()
 	DestroyWindow(category_His);
 	DestroyWindow(cate_combo);
 	DestroyWindow(add_category);
+	DestroyWindow(search);
+	DestroyWindow(day);
 	for (int i = 0; i < 3; i++)
 	{
 		DestroyWindow(filter1[i]);
 		DestroyWindow(filter2[i]);
 		DestroyWindow(filter3[i]);
 		DestroyWindow(filter3[i + 3]);
+	}
+	for (int i = 0; i < 2; i++)
+	{
+		DestroyWindow(filter4[i]);
 	}
 }
 
@@ -905,6 +1139,12 @@ void DrawLine(HDC hdc, RECT rectView)
 
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
+	char index[4];
+	int index_i;
+	std::string info[4];
+	char str_buff[100];
+	char *tok;
+	int str_cnt;
 
 	switch (iMsg)
 	{
@@ -913,7 +1153,23 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
 		{
-		case IDOK:
+		case IDDELETE:
+			GetDlgItemText(hDlg, IDC_CATEGORY, index, 4);
+			index_i = std::stoi(index);
+			if (index_i > box_num)
+			{
+				MessageBox(hDlg, "올바른 인덱스를 입력하세요.", "Error", MB_OK);
+				break;
+			}
+			strcpy(str_buff, complete_day_history[index_i - 1].c_str());
+			tok = strtok(str_buff, "|");
+			str_cnt = 0;
+			while (tok != nullptr) {
+				info[str_cnt++] = std::string(tok);
+				tok = strtok(nullptr, "|");
+			}
+
+			//delete Index;
 			break;
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
@@ -1519,6 +1775,94 @@ LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPa
 	return 0;
 }
 
+LRESULT CALLBACK DrawGraph_Pie(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam, HDC hdc, RECT rectView)
+{
+	int angle = 0, total = 0, start_angle = 0;
+	int nX, nY;
+	int radius;
+	double percent;
+	int r, g, b;
+	int text_x = 0, text_y = 0;
+
+	HBRUSH hBrush, oldBrush;
+	HFONT hFont, oldFont;
+	HPEN hPen, oldPen;
+
+	hFont = CreateFont(13, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
+	oldFont = (HFONT)SelectObject(hdc, hFont);
+
+	hPen = (HPEN)GetStockObject(NULL_PEN);
+	oldPen = (HPEN)SelectObject(hdc, hPen);
+
+	srand((unsigned)time(NULL));
+
+	nX = rectView.right * 0.4;
+	nY = rectView.bottom * 0.6;
+	radius = rectView.right * 0.2;
+
+	switch (ie)
+	{
+	case INCOME:
+		for (int i = 0; i < cate_num; i++)
+		{
+			total += pie_chart[i][0];
+		}
+
+		for (int i = 0; i < cate_num; i++)
+		{
+			if (pie_chart[i][INCOME] == 0)
+				continue;
+
+			r = rand() % 256;
+			g = rand() % 256;
+			b = rand() % 256;
+
+			hBrush = CreateSolidBrush(RGB(r, g, b));
+			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+			percent = (double)pie_chart[i][0] / total;
+			angle = percent * 360;
+
+			if (text_y == 10)
+			{
+				text_y = 0;
+				text_x = 1;
+			}
+
+			Rectangle(hdc, rectView.right * 0.08 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, rectView.right * 0.08 + rectView.right * 0.05 * text_x + 10, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y + 10);
+			TextOut(hdc, rectView.right * 0.1 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, category_name[i].c_str(), _tcslen(category_name[i].c_str()));
+			text_y += 1;
+
+			BeginPath(hdc);
+			MoveToEx(hdc, nX, nY, (LPPOINT)NULL);
+			if(i == cate_num - 1)
+				AngleArc(hdc, nX, nY, radius, start_angle, 360 - start_angle);
+			else
+				AngleArc(hdc, nX, nY, radius, start_angle, angle);
+			LineTo(hdc, nX, nY);
+			EndPath(hdc);
+			StrokeAndFillPath(hdc);
+			start_angle += angle;
+			SelectObject(hdc, oldBrush);
+			DeleteObject(hBrush);
+		}
+		break;
+	case EXPENSE:
+		for (int i = 0; i < cate_num; i++)
+		{
+			total += pie_chart[i][1];
+		}
+		break;
+	}
+
+	SelectObject(hdc, oldFont);
+	DeleteObject(hFont);
+	SelectObject(hdc, oldPen);
+	DeleteObject(hPen);
+
+	return 0;
+}
+
 void Get_income_expense_balance_day(int year, int month)
 {
 	std::string year_s, month_s;
@@ -1529,6 +1873,7 @@ void Get_income_expense_balance_day(int year, int month)
 	int str_cnt;
 	std::string::size_type n;
 	std::string location;
+	int balance = 0;
 
 	year_s = std::to_string(year);
 
@@ -1540,14 +1885,7 @@ void Get_income_expense_balance_day(int year, int month)
 		}
 	}
 
-	if (month < 10)
-	{
-		month_s = '0' + std::to_string(month);
-	}
-	else
-	{
-		month_s = std::to_string(month);
-	}
+	month_s = __make_perfect_month(month);
 
 	for (int i = 0; i < cate_num; i++)
 	{
@@ -1612,6 +1950,24 @@ void Get_income_expense_balance_day(int year, int month)
 	}
 }
 
+void set_balance()
+{
+	int balance = 0;
+
+	for (int i = 0; i < 31; i++)
+	{
+		if (ieb_arr[2][i] == 0)
+		{
+			ieb_arr[2][i] = balance;
+		}
+		else
+		{
+			ieb_arr[2][i] += balance;
+			balance = ieb_arr[2][i];
+		}
+	}
+}
+
 void Get_income_expense_balance_month(int year)
 {
 	for (int i = 0; i < 3; i++)
@@ -1633,4 +1989,38 @@ void Get_income_expense_balance_month(int year)
 			ieb_arr_year[2][i - 1] += ieb_arr[2][j];
 		}
 	}
+}
+
+void Get_total_income_category(std::string from_date, std::string to_date)
+{
+	for (int i = 0; i < cate_num; i++)
+	{
+		for (int j = 0; j < 2; j++)
+		{
+			pie_chart[i][j] = 0;
+		}
+	}
+
+	for (int i = 0; i < cate_num; i++)
+	{
+		pie_chart[i][0] = __Get_total_from_to(category_name[i], from_date, to_date, INCOME);
+		pie_chart[i][1] = __Get_total_from_to(category_name[i], from_date, to_date, EXPENSE);
+	}
+}
+
+bool Is_available_date(int year, int month, int day)
+{
+	int total_date;
+
+	if (year < 2000 || year > today_year_i + 1)
+		return false;
+	else if (month < 1 || month > 12)
+		return false;
+
+	total_date = __Maximum_day(month, year);
+
+	if (day < 0 || day > total_date)
+		return false;
+
+	return true;
 }
