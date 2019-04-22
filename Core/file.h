@@ -7,7 +7,7 @@
 #define MAX_MEMO_SIZE 50
 #define MAX_CATEGORY_NUMBER 20
 enum type { INCOME = 0, EXPENSE };
-enum flag { NOTNEED=0,NEED};
+enum flag { NOTNEED = 0, NEED };
 
 extern std::vector<std::string> day_record;
 

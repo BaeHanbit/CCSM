@@ -4,7 +4,7 @@
 enum weekday { SUNDAY = 0, MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, WEEKDAY_ERROR = 100 };
 extern std::map<std::string, weekday> calender;
 
-const int __Maximum_day(int month,int year);
+const int __Maximum_day(int month, int year);
 const int __next_month(int mon);
 void __Set_calender();
 const int __get_num_from_string(std::string buffer);
@@ -14,7 +14,7 @@ std::string __make_perfect_day(int day);
 std::string __make_perfect_month(int mon);
 std::string __make_perfect_date(int tm_year, int tm_mon, int tm_day);
 std::string __today_date();
-std::string __reset_date(int year,int month,int day);
+std::string __reset_date(int year, int month, int day);
 std::string __current_time();
 std::string __Return_time_from_record(std::string record);
 std::string __Next_mon_string(std::string mon);

@@ -574,8 +574,11 @@ const int __Get_total_from_to(std::string category_name, std::string start_date,
 			{
 				break;
 			}
-
-			if (__Compare_date(date, start_date) != 1 && __Compare_date(date, end_date) != 2)
+			if (buffer.length() == 0)
+			{
+				continue;
+			}
+			else if (__Compare_date(date, start_date) != 1 && __Compare_date(date, end_date) != 2)
 			{
 				if (flag == INCOME)
 				{
