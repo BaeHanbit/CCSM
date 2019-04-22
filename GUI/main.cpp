@@ -31,7 +31,7 @@ bool Is_available_date(int year, int month, int day);
 HINSTANCE hInst;
 // 메인 = 0, 카테고리 = 1, 통계 = 2, < = 3, > = 4, Day = 5, edit = 6, dayAdd = 7, 카테고리 상세 기록 = 8
 // 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10, 일별 월별 카테고리별 11 12 13, 지출 수입 잔액 14 15 16 
-// search = 23, 년 월 일 17 ~ 22, 수입 지출 24 25, search 26
+// search = 23, 년 월 일 17 ~ 22, 수입 지출 24 25, search 26, daybox 27
 
 int status = 0, sub_status = 0, ieb = 0, ie = 0;
 HWND hButton1, hButton2, h3, h4, ccsm, editButton, dayAdd, category_His, add_category;
@@ -45,6 +45,7 @@ int from_year, from_month, from_day, to_year, to_month, to_day;
 HWND scroll, category_page;
 HWND hwnd, dlg;
 HWND search;
+HWND dayBox;
 int TempPos, height = 0;
 HFONT hFont, oldFont;
 
@@ -125,7 +126,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		__Create_dir(MASTER);
 		__Create_index_file();
 		__Set_calender();
-		if (__File_exist(MASTER + "전체") == 0)
+		if (__File_exist(MASTER + "전체.txt") == 0)
 		{
 			__Create_category("전체", 1);
 		}
@@ -140,7 +141,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		hButton2 = CreateWindow(TEXT("button"), TEXT("통계"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)2, hInst, NULL);
 		h3 = CreateWindow(TEXT("button"), TEXT("<"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)3, hInst, NULL);
 		h4 = CreateWindow(TEXT("button"), TEXT(">"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.9, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)4, hInst, NULL);
-		ccsm = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), TEXT("Computer Can Save Money"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right, rectView.bottom * 0.05, hwnd, (HMENU)0, hInst, NULL);
+		ccsm = CreateWindowEx(NULL, TEXT("button"), TEXT("Computer Can Save Money"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right, rectView.bottom * 0.05, hwnd, (HMENU)0, hInst, NULL);
 		dayAdd = CreateWindow(TEXT("button"), TEXT("+"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, (rectView.right - rectView.right * 0.2) / 7 * 6, (rectView.bottom - rectView.bottom * 0.05) / 6 * 5 + (rectView.bottom * 0.05), (rectView.right - rectView.right * 0.2) / 7, (rectView.bottom - rectView.bottom * 0.05) / 6, hwnd, (HMENU)7, hInst, NULL);
 		break;
 	case WM_COMMAND:
@@ -148,12 +149,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case 0:
 		{
+			std::string date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month);
 			selected_year = today_year_i;
 			selected_month = today_month_i;
 			selected_month_day = __Maximum_day(selected_month, selected_year);
 			DestroyButton();
 			status = 0;
 			InvalidateRgn(hwnd, NULL, TRUE);
+			dayBox = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), date.c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right * 0.1, rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
+			EnableWindow(dayBox, FALSE);
 			hButton1 = CreateWindow(TEXT("button"), TEXT("카테고리"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)1, hInst, NULL);
 			hButton2 = CreateWindow(TEXT("button"), TEXT("통계"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)2, hInst, NULL);
 			h3 = CreateWindow(TEXT("button"), TEXT("<"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)3, hInst, NULL);
@@ -312,7 +316,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			status = 5;
 			scroll = CreateWindow(TEXT("scrollbar"), NULL, WS_CHILD | WS_VISIBLE | SBS_VERT, rectView.right * 0.98, rectView.bottom * 0.05, rectView.right * 0.02, rectView.bottom - rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
 			editButton = CreateWindow(TEXT("button"), TEXT("삭제"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.83, rectView.bottom * 0.89, rectView.right * 0.1, rectView.bottom * 0.07, hwnd, (HMENU)6, hInst, NULL);
-			day = CreateWindow(TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER, rectView.right * 0.1, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)-1, hInst, NULL);
+			day = CreateWindow(TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_NUMBER, rectView.right * 0.1, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)-1, hInst, NULL);
 			search = CreateWindow(TEXT("button"), TEXT("검색"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.17, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)26, hInst, NULL);
 			complete_day_history.clear();
 			int t;
@@ -381,6 +385,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		case 7:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_DIALOG_ADDDAY), hwnd, (DLGPROC)Dlg_AddDay);
+			SendMessage(hwnd, WM_COMMAND, 0, NULL);
 			break;
 		case 8:
 			DestroyButton();
@@ -551,6 +556,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			selected_day = std::stoi(temp_date);
 			SendMessage(hwnd, WM_COMMAND, 5, 0);
 			break;
+		case 27:
+		{
+			std::string date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month);
+			DestroyWindow(dayBox);
+			dayBox = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), date.c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right * 0.1, rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
+			EnableWindow(dayBox, FALSE);
+			break;
+		}
 		}
 		break;
 	case WM_CTLCOLORSTATIC:
@@ -570,6 +583,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			Get_income_expense_balance_day(selected_year, selected_month);
 			set_balance();
 			std::string compare_date;
+
+			SendMessage(hwnd, WM_COMMAND, 27, NULL);
 
 			hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
 
@@ -1101,6 +1116,7 @@ LRESULT hScrollMove(HWND hWnd, WPARAM wParam, LPARAM lParam, int boxHeight, int 
 
 void DestroyButton()
 {
+	DestroyWindow(dayBox);
 	DestroyWindow(hButton1);
 	DestroyWindow(hButton2);
 	DestroyWindow(h3);
@@ -1189,7 +1205,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	int hour = 0, minute = 0;
 	std::string hour_s, minute_s;
 	int money = 0;
-	char memo[41];
+	char memo[41] = "";
 	std::string check;
 	HWND con;
 	switch (iMsg)
@@ -1198,6 +1214,9 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemInt(hDlg, IDC_EDIT_YEAR, today_year_i, TRUE);
 		SetDlgItemInt(hDlg, IDC_EDIT_MONTH, today_month_i, TRUE);
 		SetDlgItemInt(hDlg, IDC_EDIT_DAY, today_day_i, TRUE);
+
+		SetDlgItemInt(hDlg, IDC_EDIT_HOUR, hour, TRUE);
+		SetDlgItemInt(hDlg, IDC_EDIT_MINUTE, minute, TRUE);
 
 		con = GetDlgItem(hDlg, IDC_RADIO_INCOME);
 		if (SendMessage(con, BM_GETCHECK, 0, 0) == BST_UNCHECKED)
@@ -1313,6 +1332,12 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 			GetDlgItemText(hDlg, IDC_EDIT_MEMO, memo, 40);
+
+			if (strlen(memo) == 0)
+			{
+				MessageBox(hDlg, "설명을 입력하세요.", "Error", MB_OK);
+				break;
+			}
 
 			__Insert_cate_data(c_name, std::to_string(year) + '-' + month_s + '-' + day_s + '-' + hour_s + '-' + minute_s, memo, money, ie);
 			EndDialog(hDlg, 0);
