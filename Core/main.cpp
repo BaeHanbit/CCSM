@@ -3,14 +3,14 @@
 
 void main()
 {
-	__Set_calender();
+	/*__Set_calender();
 	__Create_index_file();
 	__Create_dir(CATEGORY);
 
-	//__Create_category("식비", 10);
-	//__Create_category("교통비", 1);
-	//__Create_category("경조사비", 31);
-	//__Remove_category("경조사비");
+	__Create_category("식비", 10);
+	__Create_category("교통비", 1);
+	__Create_category("경조사비", 31);
+	__Remove_category("경조사비");
 
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입1", 10, INCOME);
 	__Insert_cate_data("식비", __today_date() + '-' + __current_time(), "수입2", 100, INCOME);
@@ -44,8 +44,8 @@ void main()
 
 	int reset_date = __Get_reset_date("식비");
 	std::cout << __reset_date(2100, 2, reset_date);
+*/
 
 
-
-
+	//std::cout << "Return proper max int : " << __return_proper_max_int(11) << std::endl;
 }

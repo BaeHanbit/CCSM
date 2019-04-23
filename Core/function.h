@@ -8,7 +8,7 @@ const int __Maximum_day(int month, int year);
 const int __next_month(int mon);
 void __Set_calender();
 const int __get_num_from_string(std::string buffer);
-
+const int __return_proper_max_int(int num);
 
 std::string __make_perfect_day(int day);
 std::string __make_perfect_month(int mon);

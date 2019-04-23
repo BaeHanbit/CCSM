@@ -95,6 +95,31 @@ const int __get_num_from_string(std::string buffer)
 	}
 }
 
+const int __return_proper_max_int(int num)
+{
+	if (num <= 10)
+	{
+		return 10;
+	}
+	else
+	{
+		std::string max_num_string = std::to_string(num);
+
+		int times = 1;
+		for (int i = 1; i < max_num_string.size(); i++)
+		{
+			times *= 10;
+		}
+		if (times == num)
+		{
+			return times;
+		}
+		else
+		{
+			return (std::stoi(max_num_string.substr(0, 1)) + 1) * times;
+		}
+	}
+}
 
 /*
 	Parameter
