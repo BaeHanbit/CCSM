@@ -31,10 +31,11 @@ bool Is_available_date(int year, int month, int day);
 HINSTANCE hInst;
 // 메인 = 0, 카테고리 = 1, 통계 = 2, < = 3, > = 4, Day = 5, edit = 6, dayAdd = 7, 카테고리 상세 기록 = 8
 // 카테고리 콤보박스 = 9, 카테고리 추가 다이얼로그 = 10, 일별 월별 카테고리별 11 12 13, 지출 수입 잔액 14 15 16 
-// search = 23, 년 월 일 17 ~ 22, 수입 지출 24 25, search 26, daybox 27
+// search = 23, 년 월 일 17 ~ 22, 수입 지출 24 25, daybox 27, exit 28
 
+int dayArr[6][7] = { 0, };
 int status = 0, sub_status = 0, ieb = 0, ie = 0;
-HWND hButton1, hButton2, h3, h4, ccsm, editButton, dayAdd, category_His, add_category;
+HWND hButton1, hButton2, h3, h4, ccsm, editButton, dayAdd, category_His, add_category, exitCCSM;
 HWND cate_combo;
 HWND day;
 HWND filter1[3];
@@ -52,7 +53,6 @@ HFONT hFont, oldFont;
 int selected_category;
 extern std::map<std::string, weekday> calender;
 std::vector<std::string> cate_history;
-std::vector<std::string> day_history;
 std::vector<std::string> complete_day_history;
 std::string temp_cate_history[8];
 int cateHis_num;
@@ -87,7 +87,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	WndClass.cbClsExtra = 0;
 	WndClass.cbWndExtra = 0;
 	WndClass.hInstance = hInstance;
-	WndClass.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+	WndClass.hIcon = LoadIcon(hInst, MAKEINTRESOURCE(CCSM_LOGO));
 	WndClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	WndClass.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
 	WndClass.lpszMenuName = NULL;
@@ -99,8 +99,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	UpdateWindow(hwnd);
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		if (IsDialogMessage(hwnd, &msg) == 0)
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
 	}
 	return (int)msg.wParam;
 }
@@ -141,8 +144,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		hButton2 = CreateWindow(TEXT("button"), TEXT("통계"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.46 - 2, rectView.right * 0.2, rectView.bottom * 0.39, hwnd, (HMENU)2, hInst, NULL);
 		h3 = CreateWindow(TEXT("button"), TEXT("<"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)3, hInst, NULL);
 		h4 = CreateWindow(TEXT("button"), TEXT(">"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.9, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)4, hInst, NULL);
-		ccsm = CreateWindowEx(NULL, TEXT("button"), TEXT("Computer Can Save Money"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right, rectView.bottom * 0.05, hwnd, (HMENU)0, hInst, NULL);
+		ccsm = CreateWindowEx(NULL, TEXT("button"), TEXT("Computer Can Save Money"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right * 0.97, rectView.bottom * 0.05, hwnd, (HMENU)0, hInst, NULL);
 		dayAdd = CreateWindow(TEXT("button"), TEXT("+"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, (rectView.right - rectView.right * 0.2) / 7 * 6, (rectView.bottom - rectView.bottom * 0.05) / 6 * 5 + (rectView.bottom * 0.05), (rectView.right - rectView.right * 0.2) / 7, (rectView.bottom - rectView.bottom * 0.05) / 6, hwnd, (HMENU)7, hInst, NULL);
+		exitCCSM = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), TEXT("X"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.97, 0, rectView.right * 0.03, rectView.bottom * 0.05, hwnd, (HMENU)28, hInst, NULL);
 		break;
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
@@ -175,7 +179,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			cate_num = __Get_all_file(category_name, MASTER);
 			for (int i = 0; i < cate_num; i++)
 			{
-				for(int j = 0; j < 4; j++)
+				for (int j = 0; j < 4; j++)
 					category_name[i].pop_back();
 			}
 			hButton1 = CreateWindow(TEXT("button"), TEXT("메인페이지"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)0, hInst, NULL);
@@ -187,13 +191,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				SetScrollRange(scroll, SB_CTL, 0, categoryBox * (cate_num - 7), TRUE);
 			else
 				SetScrollRange(scroll, SB_CTL, 0, 0, TRUE);
-			SetScrollPos(scroll, SB_CTL, 0, TRUE); 
+			SetScrollPos(scroll, SB_CTL, 0, TRUE);
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
 		}
 		case 2:
 			DestroyButton();
-			status = 2;	
+			status = 2;
 			cate_history.clear();
 			selected_month = today_month_i;
 			selected_year = today_year_i;
@@ -205,7 +209,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			filter1[0] = CreateWindow(TEXT("button"), TEXT("일별"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.14, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)11, hInst, NULL);
 			filter1[1] = CreateWindow(TEXT("button"), TEXT("월별"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.23, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)12, hInst, NULL);
 			filter1[2] = CreateWindow(TEXT("button"), TEXT("카테고리별"), WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON, rectView.right * 0.32, rectView.bottom * 0.075, 100, 30, hwnd, (HMENU)13, hInst, NULL);
-			
+
 			CheckRadioButton(hwnd, 11, 13, 11 + sub_status);
 
 			if (sub_status != 2)
@@ -217,13 +221,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			else
 			{
-				filter3[0] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.48, rectView.bottom * 0.06, 70, 20, hwnd, (HMENU)17, hInst, NULL);
-				filter3[1] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.58, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)18, hInst, NULL);
-				filter3[2] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.65, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)19, hInst, NULL);
-				filter3[3] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.48, rectView.bottom * 0.1, 70, 20, hwnd, (HMENU)20, hInst, NULL);
-				filter3[4] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.58, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)21, hInst, NULL);
-				filter3[5] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER, rectView.right * 0.65, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)22, hInst, NULL);
-				search = CreateWindow(TEXT("button"), TEXT("검색"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, rectView.right * 0.74, rectView.bottom * 0.07, rectView.right * 0.05, rectView.bottom * 0.05, hwnd, (HMENU)23, hInst, NULL);
+				filter3[0] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | WS_TABSTOP, rectView.right * 0.48, rectView.bottom * 0.06, 70, 20, hwnd, (HMENU)17, hInst, NULL);
+				filter3[1] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | WS_TABSTOP, rectView.right * 0.58, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)18, hInst, NULL);
+				filter3[2] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | WS_TABSTOP, rectView.right * 0.65, rectView.bottom * 0.06, 40, 20, hwnd, (HMENU)19, hInst, NULL);
+				filter3[3] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | WS_TABSTOP, rectView.right * 0.48, rectView.bottom * 0.1, 70, 20, hwnd, (HMENU)20, hInst, NULL);
+				filter3[4] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | WS_TABSTOP, rectView.right * 0.58, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)21, hInst, NULL);
+				filter3[5] = CreateWindow(TEXT("edit"), NULL, WS_VISIBLE | WS_CHILD | WS_BORDER | ES_NUMBER | WS_TABSTOP, rectView.right * 0.65, rectView.bottom * 0.1, 40, 20, hwnd, (HMENU)22, hInst, NULL);
+				search = CreateWindow(TEXT("button"), TEXT("검색"), WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON | WS_TABSTOP, rectView.right * 0.74, rectView.bottom * 0.07, rectView.right * 0.05, rectView.bottom * 0.05, hwnd, (HMENU)23, hInst, NULL);
 				filter4[0] = CreateWindow(TEXT("button"), TEXT("수입"), WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON | WS_GROUP, rectView.right * 0.6, rectView.bottom * 0.155, 100, 20, hwnd, (HMENU)24, hInst, NULL);
 				filter4[1] = CreateWindow(TEXT("button"), TEXT("지출"), WS_VISIBLE | WS_CHILD | BS_AUTORADIOBUTTON, rectView.right * 0.7, rectView.bottom * 0.155, 100, 20, hwnd, (HMENU)25, hInst, NULL);
 				CheckRadioButton(hwnd, 24, 25, 24 + ie);
@@ -316,22 +320,21 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			status = 5;
 			scroll = CreateWindow(TEXT("scrollbar"), NULL, WS_CHILD | WS_VISIBLE | SBS_VERT, rectView.right * 0.98, rectView.bottom * 0.05, rectView.right * 0.02, rectView.bottom - rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
 			editButton = CreateWindow(TEXT("button"), TEXT("삭제"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.83, rectView.bottom * 0.89, rectView.right * 0.1, rectView.bottom * 0.07, hwnd, (HMENU)6, hInst, NULL);
-			day = CreateWindow(TEXT("edit"), NULL, WS_CHILD | WS_VISIBLE | WS_BORDER | ES_NUMBER, rectView.right * 0.1, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)-1, hInst, NULL);
-			search = CreateWindow(TEXT("button"), TEXT("검색"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.17, rectView.bottom * 0.915, rectView.right * 0.05, rectView.bottom * 0.04, hwnd, (HMENU)26, hInst, NULL);
 			complete_day_history.clear();
 			int t;
 			std::string location;
 			std::string info[4], date[5];
 			char str_buff[100];
-			char *tok;
+			char* tok;
 			int str_cnt;
 			int cnt;
 			std::string compare_date;
+			std::string::size_type Is_i;
 
 			for (int i = 0; i < cate_num; i++)
 			{
 				std::string temp_day_history[8];
-				day_history.clear();
+				std::vector<std::string> day_history;
 				cnt = 0;
 				t = 0;
 				location = CATEGORY + category_name[i] + '/' + std::to_string(selected_year) + '-' + __make_perfect_day(selected_month) + ".txt";
@@ -349,9 +352,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 				cnt += t * 8;
 				t = 0;
-				while (temp_cate_history[t] != "")
+				while (temp_day_history[t] != "")
 				{
-					day_history.push_back(temp_cate_history[t]);
+					day_history.push_back(temp_day_history[t]);
 					t++;
 				}
 				cnt += t;
@@ -551,11 +554,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			ie = EXPENSE;
 			SendMessage(hwnd, WM_COMMAND, 2, 0);
 			break;
-		case 26:
-			GetWindowText(day, temp_date, 3);
-			selected_day = std::stoi(temp_date);
-			SendMessage(hwnd, WM_COMMAND, 5, 0);
-			break;
 		case 27:
 		{
 			std::string date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month);
@@ -563,6 +561,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			dayBox = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), date.c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right * 0.1, rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
 			EnableWindow(dayBox, FALSE);
 			break;
+		}
+		case 28:
+		{
+			PostQuitMessage(0);
+			return 0;
 		}
 		}
 		break;
@@ -584,6 +587,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			set_balance();
 			std::string compare_date;
 
+
 			SendMessage(hwnd, WM_COMMAND, 27, NULL);
 
 			hFont = CreateFont(11, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
@@ -600,6 +604,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			}
 			int flag = 0;
 			int n = 1;
+
+			for (int i = 0; i < 6; i++)
+			{
+				for (int j = 0; j < 7; j++)
+				{
+					dayArr[i][j] = 0;
+				}
+			}
+
 			for (int i = 1; i <= 6; i++)
 			{
 				for (int j = 1; j <= 7; j++)
@@ -622,6 +635,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					}
 					if (flag == 1)
 					{
+						dayArr[i - 1][j - 1] = n;
 						TextOut(hdc, s2 * j - s2 * 0.93, s1 * i - s1 * 0.5, std::to_string(n).c_str(), _tcslen(std::to_string(n).c_str()));
 						compare_date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month) + '-' + __make_perfect_day(n);
 						if (__Compare_date(current_date, compare_date) != 1)
@@ -653,7 +667,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 			for (int i = 1; i <= cate_num; i++)
 			{
-				hBrush = CreateSolidBrush(RGB(250, 243, 219));	
+				hBrush = CreateSolidBrush(RGB(250, 243, 219));
 				SelectObject(hdc, hBrush);
 
 				std::string selected_m;
@@ -672,8 +686,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					percent = 0;
 				else if (category_expense == 0)
 					percent = 1;
-				else 
-					percent = (double)category_expense / category_income;
+				else if (category_income < category_expense)
+					percent = 0;
+				else
+					percent = (category_total_income - category_total_expense) / (double)category_total_income;;
 
 				i_percent = percent * 100;
 
@@ -688,14 +704,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 				if (i == 1)
 				{
-					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right *  0.78, rectView.bottom * 0.05 + categoryBox - height);
+					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right * 0.78, rectView.bottom * 0.05 + categoryBox - height);
 					SetBkMode(hdc, TRANSPARENT);
 					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.025 + categoryBox / 2 - height, category_name[i - 1].c_str(), _tcslen(category_name[i - 1].c_str()));
 					TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.06 + categoryBox / 2 - height, category_percent, _tcslen(category_percent));
 				}
 				else
 				{
-					Rectangle(hdc, 0, rectView.bottom * 0.05 + categoryBox * (i - 1) - height, rectView.right *  0.78, rectView.bottom * 0.05 + categoryBox * i - height);
+					Rectangle(hdc, 0, rectView.bottom * 0.05 + categoryBox * (i - 1) - height, rectView.right * 0.78, rectView.bottom * 0.05 + categoryBox * i - height);
 					SetBkMode(hdc, TRANSPARENT);
 					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.025 + categoryBox * (i - 1) + categoryBox / 2 - height, category_name[i - 1].c_str(), _tcslen(category_name[i - 1].c_str()));
 					TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.06 + categoryBox * (i - 1) + categoryBox / 2 - height, category_percent, _tcslen(category_percent));
@@ -747,8 +763,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				percent = 0;
 			else if (category_total_expense == 0)
 				percent = 1;
+			else if (category_total_income < category_total_expense)
+				percent = 0;
 			else
-				percent = (double)category_total_expense / category_total_income;
+				percent = (category_total_income - category_total_expense) / (double)category_total_income;
 
 			i_percent = percent * 100;
 
@@ -761,17 +779,25 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				wsprintf(category_percent, TEXT("[%d%%] %d / %d"), i_percent, category_total_income - category_total_expense, category_total_income);
 			}
 
-			Rectangle(hdc, 0, rectView.bottom * 0.88, rectView.right *  0.78, rectView.bottom);
+			Rectangle(hdc, 0, rectView.bottom * 0.88, rectView.right * 0.78, rectView.bottom);
 			TextOut(hdc, rectView.right * 0.06, rectView.bottom * 0.835 + rectView.bottom * 0.08, "[Total]", _tcslen("[Total]"));
 			TextOut(hdc, rectView.right * 0.03, rectView.bottom * 0.89 + categoryBox / 2, category_percent, _tcslen(category_percent));
 
 			hBrush = CreateSolidBrush(RGB(255, 255, 255));
 			SelectObject(hdc, hBrush);
-			Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right *  0.75, rectView.bottom * 0.97);
+			Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right * 0.75, rectView.bottom * 0.97);
 
 			hBrush = CreateSolidBrush(RGB(133, 133, 133));
 			SelectObject(hdc, hBrush);
-			Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right * 0.15 + (rectView.right * 0.6) * percent, rectView.bottom * 0.97);
+			if (percent >= 1)
+			{
+				Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right * 0.15 + rectView.right * 0.6, rectView.bottom * 0.97);
+			}
+			else
+			{
+				Rectangle(hdc, rectView.right * 0.15, rectView.bottom * 0.91, rectView.right * 0.15 + (rectView.right * 0.6) * percent, rectView.bottom * 0.97);
+			}
+
 
 			SelectObject(hdc, oldBrush);
 			DeleteObject(hBrush);
@@ -820,10 +846,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			hBrush = CreateSolidBrush(RGB(250, 243, 219));
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
 			char str_buff[100];
-			char *tok;
+			char* tok;
 			int str_cnt;
 			std::string info[5], date[5];
 			std::string time;
+			std::string::size_type n;
+
+			int in = 0, e = 0, b = 0;
+			std::string total_i, total_e, total_b;
 
 			for (int i = 1; i <= box_num; i++)
 			{
@@ -835,7 +865,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 					tok = strtok(nullptr, "|");
 				}
 
-				strcpy(str_buff,info[1].c_str());
+				strcpy(str_buff, info[1].c_str());
 				tok = strtok(str_buff, "-");
 				str_cnt = 0;
 				while (tok != nullptr) {
@@ -844,6 +874,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 
 				time = '[' + date[3] + " : " + date[4] + ']';
+
+				n = info[3].find("+");
+
+				if (n == std::string::npos)
+				{
+					e += std::stoi(info[3].substr(1));
+					b -= std::stoi(info[3].substr(1));
+				}
+				else
+				{
+					in += std::stoi(info[3].substr(1));
+					b += std::stoi(info[3].substr(1));
+				}
 
 				info[3].insert(1, " ");
 				info[3].insert(0, "[");
@@ -857,7 +900,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 				if (i == 1)
 				{
-					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight - height);
+					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right * 0.98, rectView.bottom * 0.05 + boxHeight - height);
 					SetBkMode(hdc, TRANSPARENT);
 					wsprintf(boxNum, TEXT("%d"), i);
 					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.04 + boxHeight / 2 - height, boxNum, _tcslen(boxNum));
@@ -868,7 +911,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 				else
 				{
-					Rectangle(hdc, 0, rectView.bottom * 0.05 + boxHeight * (i - 1) - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight * i - height);
+					Rectangle(hdc, 0, rectView.bottom * 0.05 + boxHeight * (i - 1) - height, rectView.right * 0.98, rectView.bottom * 0.05 + boxHeight * i - height);
 					SetBkMode(hdc, TRANSPARENT);
 					wsprintf(boxNum, TEXT("%d"), i);
 					TextOut(hdc, rectView.right * 0.05, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, boxNum, _tcslen(boxNum));
@@ -882,10 +925,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
 
 			SetBkMode(hdc, TRANSPARENT);
-			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right *  0.98, rectView.bottom);
-			TextOut(hdc, rectView.right * 0.25, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[07 : 00]", _tcslen("[07 : 00]"));
-			TextOut(hdc, rectView.right * 0.5, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[전체]", _tcslen("[전체]"));
-			TextOut(hdc, rectView.right * 0.7, rectView.bottom * 0.85 + rectView.bottom * 0.07, "[Pay Back]", _tcslen("[Pay Back]"));
+			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right * 0.98, rectView.bottom);
+
+			total_i = "총 수입 : " + std::to_string(in);
+			total_e = "총 지출 : " + std::to_string(e);
+			total_b = "남은 돈 : " + std::to_string(b);
+
+			TextOut(hdc, rectView.right * 0.2, rectView.bottom * 0.85 + rectView.bottom * 0.07, total_i.c_str(), _tcslen(total_i.c_str()));
+			TextOut(hdc, rectView.right * 0.45, rectView.bottom * 0.85 + rectView.bottom * 0.07, total_e.c_str(), _tcslen(total_e.c_str()));
+			TextOut(hdc, rectView.right * 0.65, rectView.bottom * 0.85 + rectView.bottom * 0.07, total_b.c_str(), _tcslen(total_b.c_str()));
 			SelectObject(hdc, oldBrush);
 			DeleteObject(hBrush);
 			break;
@@ -897,7 +945,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			std::string cate_history_date[5];
 			std::string cate_history_date_complete;
 			char str_buff[100];
-			char *tok;
+			char* tok;
 			int str_cnt;
 			int flag;
 			TCHAR total_m[50];
@@ -939,7 +987,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 
 				if (i == 1)
 				{
-					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight - height);
+					Rectangle(hdc, 0, rectView.bottom * 0.05 - height, rectView.right * 0.98, rectView.bottom * 0.05 + boxHeight - height);
 					SetBkMode(hdc, TRANSPARENT);
 					TextOut(hdc, rectView.right * 0.12, rectView.bottom * 0.04 + boxHeight / 2 - height, cate_history_date_complete.c_str(), _tcslen(cate_history_date_complete.c_str()));
 					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight / 2 - height, cate_history_info[3].c_str(), _tcslen(cate_history_info[3].c_str()));
@@ -952,7 +1000,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				}
 				else
 				{
-					Rectangle(hdc, 0, rectView.bottom * 0.05 + boxHeight * (i - 1) - height, rectView.right *  0.98, rectView.bottom * 0.05 + boxHeight * i - height);
+					Rectangle(hdc, 0, rectView.bottom * 0.05 + boxHeight * (i - 1) - height, rectView.right * 0.98, rectView.bottom * 0.05 + boxHeight * i - height);
 					SetBkMode(hdc, TRANSPARENT);
 					TextOut(hdc, rectView.right * 0.12, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, cate_history_date_complete.c_str(), _tcslen(cate_history_date_complete.c_str()));
 					TextOut(hdc, rectView.right * 0.35, rectView.bottom * 0.04 + boxHeight * (i - 1) + boxHeight / 2 - height, cate_history_info[3].c_str(), _tcslen(cate_history_info[3].c_str()));
@@ -969,7 +1017,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			SelectObject(hdc, hBrush);
 
 			SetBkMode(hdc, TRANSPARENT);
-			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right *  0.98, rectView.bottom);
+			Rectangle(hdc, 0, rectView.bottom * 0.85, rectView.right * 0.98, rectView.bottom);
 			TextOut(hdc, rectView.right * 0.40, rectView.bottom * 0.85 + rectView.bottom * 0.07, total_m, _tcslen(total_m));
 			TextOut(hdc, rectView.right * 0.70, rectView.bottom * 0.85 + rectView.bottom * 0.07, "초기화 날짜 : 2019-01-01", _tcslen("초기화 날짜 : 2019-01-01"));
 			SelectObject(hdc, oldBrush);
@@ -979,31 +1027,31 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		EndPaint(hwnd, &ps);
 		break;
 	}
-	case WM_KEYDOWN:
+	case WM_LBUTTONDOWN:
 	{
-		switch (wParam)
-		{
-		case VK_ESCAPE:
-		{
-			PostQuitMessage(0);
-			return 0;
-		}
-		}
-		break;
-	}
-	case WM_LBUTTONUP:
-		POINT mouse;
-		GetCursorPos(&mouse);
+		LONG s1 = (rectView.bottom - rectView.bottom * 0.05) / 6;
+		LONG s2 = (rectView.right - rectView.right * 0.2) / 7;
+		int x, y;
+		int nX, nY;
+		x = LOWORD(lParam);
+		y = HIWORD(lParam);
+
 		switch (status)
 		{
 		case 0:
-			if (mouse.x < rectView.right * 0.8 && mouse.y > rectView.bottom * 0.05)
+			if (x < rectView.right * 0.8 && y > rectView.bottom * 0.05)
 			{
-				SendMessage(hwnd, WM_COMMAND, 5, 0);
+				nX = x / s2;
+				nY = (y - rectView.bottom * 0.05) / s1;
+				selected_day = dayArr[nY][nX];
+
+				if (selected_day != 0)
+					SendMessage(hwnd, WM_COMMAND, 5, 0);
 			}
 			break;
 		}
 		break;
+	}
 	case WM_VSCROLL:
 		switch (status)
 		{
@@ -1014,6 +1062,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			SetScrollPos(scroll, SB_CTL, TempPos, TRUE);
 			break;
 		case 5:
+			if (box_num <= 8)
+				return 1;
 			hScrollMove(hwnd, wParam, lParam, boxHeight, box_num - 8);
 			SetScrollPos(scroll, SB_CTL, TempPos, TRUE);
 			break;
@@ -1047,6 +1097,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (status == 5)
 		{
+			if (box_num <= 8)
+				return 1;
+
 			zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 
 			TempPos = height;
@@ -1157,9 +1210,9 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
 	char index[4];
 	int index_i;
-	std::string info[4];
+	std::string info[5];
 	char str_buff[100];
-	char *tok;
+	char* tok;
 	int str_cnt;
 
 	switch (iMsg)
@@ -1170,7 +1223,8 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		switch (LOWORD(wParam))
 		{
 		case IDDELETE:
-			GetDlgItemText(hDlg, IDC_CATEGORY, index, 4);
+		{
+			GetDlgItemText(hDlg, IDC_EDIT_DELETE_INDEX, index, 4);
 			index_i = std::stoi(index);
 			if (index_i > box_num)
 			{
@@ -1184,14 +1238,18 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				info[str_cnt++] = std::string(tok);
 				tok = strtok(nullptr, "|");
 			}
-
-			//delete Index;
+			__Remove_cate_data(info[4], std::to_string(selected_year) + '-' + __make_perfect_month(selected_month), std::stoi(info[0]));
+			EndDialog(hDlg, 0);
+			SendMessage(hwnd, WM_COMMAND, 5, 0);
 			break;
+		}
 		case IDCANCEL:
+		{
 			EndDialog(hDlg, 0);
 			break;
 		}
 		break;
+		}
 	}
 	return 0;
 }
@@ -1294,7 +1352,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 				break;
 			}
 
-			hour = GetDlgItemInt(hDlg, IDC_EDIT_HOUR, NULL, TRUE);	
+			hour = GetDlgItemInt(hDlg, IDC_EDIT_HOUR, NULL, TRUE);
 			minute = GetDlgItemInt(hDlg, IDC_EDIT_MINUTE, NULL, TRUE);
 			if (hour < 0 || hour > 23)
 			{
@@ -1315,7 +1373,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			{
 				hour_s = std::to_string(hour);
 			}
-			
+
 			if (minute < 10)
 			{
 				minute_s = '0' + std::to_string(minute);
@@ -1345,7 +1403,7 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		case IDCANCEL:
 			EndDialog(hDlg, 0);
 			break;
-		} 
+		}
 	}
 	return 0;
 }
@@ -1444,7 +1502,7 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 		{
 			i_max = ieb_arr[0][i];
 		}
-		
+
 		if (ieb_arr[1][i] > e_max)
 		{
 			e_max = ieb_arr[1][i];
@@ -1486,7 +1544,7 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 		{
 			TextOut(hdc, rectView.right * 0.1, rectView.bottom * 0.88 - (rectView.bottom * 0.065) * i, std::to_string(i * flag * 10000).c_str(), _tcslen(std::to_string(i * flag * 10000).c_str()));
 		}
-		
+
 		SelectObject(hdc, grayPen);
 
 		for (int i = 0; i <= 10; i++)
@@ -1509,7 +1567,8 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 			if (ieb_arr[0][i - 1] != 0)
 			{
 				percent = 1 - (double)ieb_arr[0][i - 1] / max;
-				Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
+				if (ieb_arr[0][i - 1] > 0)
+					Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
 			}
 		}
 		break;
@@ -1555,7 +1614,8 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 			if (ieb_arr[1][i - 1] != 0)
 			{
 				percent = 1 - (double)ieb_arr[1][i - 1] / max;
-				Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
+				if (ieb_arr[1][i - 1] > 0)
+					Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
 			}
 		}
 		break;
@@ -1601,7 +1661,8 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 			if (ieb_arr[2][i - 1] != 0)
 			{
 				percent = 1 - (double)ieb_arr[2][i - 1] / max;
-				Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
+				if (ieb_arr[2][i - 1] > 0)
+					Rectangle(hdc, rectView.right * 0.105 + rectView.right * 0.02 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.105 + rectView.right * 0.02 * i + rectView.right * 0.01, rectView.bottom * 0.89);
 			}
 		}
 		break;
@@ -1698,7 +1759,8 @@ LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPa
 			if (ieb_arr_year[0][i - 1] != 0)
 			{
 				percent = 1 - (double)ieb_arr_year[0][i - 1] / max;
-				Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
+				if (ieb_arr_year[0][i - 1] > 0)
+					Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
 			}
 		}
 		break;
@@ -1745,7 +1807,8 @@ LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPa
 			if (ieb_arr_year[1][i - 1] != 0)
 			{
 				percent = 1 - (double)ieb_arr_year[1][i - 1] / max;
-				Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
+				if (ieb_arr_year[1][i - 1] > 0)
+					Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
 			}
 		}
 		break;
@@ -1792,7 +1855,8 @@ LRESULT CALLBACK DrawGraph_Month(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPa
 			if (ieb_arr_year[2][i - 1] != 0)
 			{
 				percent = 1 - (double)ieb_arr_year[2][i - 1] / max;
-				Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
+				if (ieb_arr_year[2][i - 1] > 0)
+					Rectangle(hdc, rectView.right * 0.094 + rectView.right * 0.05 * i, (rectView.bottom * 0.24) + ((rectView.bottom * 0.65) * percent), rectView.right * 0.094 + rectView.right * 0.05 * i + rectView.right * 0.03, rectView.bottom * 0.89);
 			}
 		}
 		break;
@@ -1808,6 +1872,7 @@ LRESULT CALLBACK DrawGraph_Pie(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 	double percent;
 	int r, g, b;
 	int text_x = 0, text_y = 0;
+	std::string data;
 
 	HBRUSH hBrush, oldBrush;
 	HFONT hFont, oldFont;
@@ -1821,9 +1886,9 @@ LRESULT CALLBACK DrawGraph_Pie(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 
 	srand((unsigned)time(NULL));
 
-	nX = rectView.right * 0.4;
+	nX = rectView.right * 0.5;
 	nY = rectView.bottom * 0.6;
-	radius = rectView.right * 0.2;
+	radius = rectView.right * 0.15;
 
 	switch (ie)
 	{
@@ -1854,13 +1919,15 @@ LRESULT CALLBACK DrawGraph_Pie(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 				text_x = 1;
 			}
 
-			Rectangle(hdc, rectView.right * 0.08 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, rectView.right * 0.08 + rectView.right * 0.05 * text_x + 10, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y + 10);
-			TextOut(hdc, rectView.right * 0.1 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, category_name[i].c_str(), _tcslen(category_name[i].c_str()));
+			data = category_name[i] + " " + std::to_string(pie_chart[i][0]) + "\\ " + std::to_string((int)(percent * 100)) + "%";
+
+			Rectangle(hdc, rectView.right * 0.03 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, rectView.right * 0.03 + rectView.right * 0.05 * text_x + 10, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y + 10);
+			TextOut(hdc, rectView.right * 0.05 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, data.c_str(), _tcslen(data.c_str()));
 			text_y += 1;
 
 			BeginPath(hdc);
 			MoveToEx(hdc, nX, nY, (LPPOINT)NULL);
-			if(i == cate_num - 1)
+			if (i == cate_num - 1)
 				AngleArc(hdc, nX, nY, radius, start_angle, 360 - start_angle);
 			else
 				AngleArc(hdc, nX, nY, radius, start_angle, angle);
@@ -1876,6 +1943,47 @@ LRESULT CALLBACK DrawGraph_Pie(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 		for (int i = 0; i < cate_num; i++)
 		{
 			total += pie_chart[i][1];
+		}
+
+		for (int i = 0; i < cate_num; i++)
+		{
+			if (pie_chart[i][EXPENSE] == 0)
+				continue;
+
+			r = rand() % 256;
+			g = rand() % 256;
+			b = rand() % 256;
+
+			hBrush = CreateSolidBrush(RGB(r, g, b));
+			oldBrush = (HBRUSH)SelectObject(hdc, hBrush);
+
+			percent = (double)pie_chart[i][1] / total;
+			angle = percent * 360;
+
+			if (text_y == 10)
+			{
+				text_y = 0;
+				text_x = 1;
+			}
+
+			data = category_name[i] + " " + std::to_string(pie_chart[i][1]) + "\\ " + std::to_string((int)(percent * 100)) + "%";
+
+			Rectangle(hdc, rectView.right * 0.03 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, rectView.right * 0.03 + rectView.right * 0.05 * text_x + 10, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y + 10);
+			TextOut(hdc, rectView.right * 0.05 + rectView.right * 0.05 * text_x, rectView.bottom * 0.3 + rectView.bottom * 0.03 * text_y, data.c_str(), _tcslen(data.c_str()));
+			text_y += 1;
+
+			BeginPath(hdc);
+			MoveToEx(hdc, nX, nY, (LPPOINT)NULL);
+			if (i == cate_num - 1)
+				AngleArc(hdc, nX, nY, radius, start_angle, 360 - start_angle);
+			else
+				AngleArc(hdc, nX, nY, radius, start_angle, angle);
+			LineTo(hdc, nX, nY);
+			EndPath(hdc);
+			StrokeAndFillPath(hdc);
+			start_angle += angle;
+			SelectObject(hdc, oldBrush);
+			DeleteObject(hBrush);
 		}
 		break;
 	}
@@ -1894,7 +2002,7 @@ void Get_income_expense_balance_day(int year, int month)
 	std::string info[4], date[5];
 	int t;
 	char str_buff[100];
-	char *tok;
+	char* tok;
 	int str_cnt;
 	std::string::size_type n;
 	std::string location;
