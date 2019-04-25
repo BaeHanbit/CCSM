@@ -296,6 +296,19 @@ int __Remove_cate_data(std::string category_name, std::string which_month, int i
 		}
 		else if (buffer_index == index)
 		{
+			if (buffer.find("|+") != buffer.npos)
+			{
+				int origin_money = __Get_total_income(category_name, which_month);
+				int change_money = origin_money - std::stoi(buffer.substr(buffer.find("|+") + 2));
+				__Set_total_income(category_name, which_month, change_money);
+			}
+			else
+			{
+				int origin_money = __Get_total_expense(category_name, which_month);
+				int change_money = origin_money - std::stoi(buffer.substr(buffer.find("|-") + 2));
+				__Set_total_expense(category_name, which_month, change_money);
+			}
+			
 			delete_point = temp_delete_point;
 			flag_save = true;
 		}
