@@ -151,7 +151,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDCANCEL)
 		{
-			SendMessage(hwnd, WM_COMMAND, 0, 0);
+			break;
 		}
 
 		switch (LOWORD(wParam))
@@ -1284,6 +1284,8 @@ BOOL CALLBACK Dlg_AddDay(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 	switch (iMsg)
 	{
 	case WM_INITDIALOG:
+		//SetCursor()
+
 		SetDlgItemInt(hDlg, IDC_EDIT_YEAR, today_year_i, TRUE);
 		SetDlgItemInt(hDlg, IDC_EDIT_MONTH, today_month_i, TRUE);
 		SetDlgItemInt(hDlg, IDC_EDIT_DAY, today_day_i, TRUE);
