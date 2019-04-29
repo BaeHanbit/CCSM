@@ -99,7 +99,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLi
 	UpdateWindow(hwnd);
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-		if (IsDialogMessage(hwnd, &msg) == 0)
+		if (!IsDialogMessage(hwnd, &msg))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -149,6 +149,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		exitCCSM = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), TEXT("X"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.97, 0, rectView.right * 0.03, rectView.bottom * 0.05, hwnd, (HMENU)28, hInst, NULL);
 		break;
 	case WM_COMMAND:
+		if (LOWORD(wParam) == IDCANCEL)
+		{
+			SendMessage(hwnd, WM_COMMAND, 0, 0);
+		}
+
 		switch (LOWORD(wParam))
 		{
 		case 0:
@@ -159,7 +164,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			selected_month_day = __Maximum_day(selected_month, selected_year);
 			DestroyButton();
 			status = 0;
-			InvalidateRgn(hwnd, NULL, TRUE);
 			dayBox = CreateWindowEx(WS_EX_TOPMOST, TEXT("button"), date.c_str(), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, 0, 0, rectView.right * 0.1, rectView.bottom * 0.05, hwnd, NULL, hInst, NULL);
 			EnableWindow(dayBox, FALSE);
 			hButton1 = CreateWindow(TEXT("button"), TEXT("카테고리"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.0525, rectView.right * 0.2, rectView.bottom * 0.4, hwnd, (HMENU)1, hInst, NULL);
@@ -167,6 +171,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			h3 = CreateWindow(TEXT("button"), TEXT("<"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.8, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)3, hInst, NULL);
 			h4 = CreateWindow(TEXT("button"), TEXT(">"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, rectView.right * 0.9, rectView.bottom * 0.85, rectView.right * 0.1, rectView.bottom * 0.15, hwnd, (HMENU)4, hInst, NULL);
 			dayAdd = CreateWindow(TEXT("button"), TEXT("+"), WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON, (rectView.right - rectView.right * 0.2) / 7 * 6, (rectView.bottom - rectView.bottom * 0.05) / 6 * 5 + (rectView.bottom * 0.05), (rectView.right - rectView.right * 0.2) / 7, (rectView.bottom - rectView.bottom * 0.05) / 6, hwnd, (HMENU)7, hInst, NULL);
+			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
 		}
 		case 1:
@@ -547,13 +552,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			InvalidateRgn(hwnd, NULL, TRUE);
 			break;
 		case 24:
+		{
 			ie = INCOME;
 			SendMessage(hwnd, WM_COMMAND, 2, 0);
 			break;
+		}
 		case 25:
+		{
 			ie = EXPENSE;
 			SendMessage(hwnd, WM_COMMAND, 2, 0);
 			break;
+		}
 		case 27:
 		{
 			std::string date = std::to_string(selected_year) + '-' + __make_perfect_month(selected_month);
@@ -569,9 +578,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		}
 		}
 		break;
-	case WM_CTLCOLORSTATIC:
-		return (LRESULT)CreateSolidBrush(RGB(255, 255, 255));
-		break;
 	case WM_PAINT:
 	{
 		hdc = BeginPaint(hwnd, &ps);
@@ -586,7 +592,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 			Get_income_expense_balance_day(selected_year, selected_month);
 			set_balance();
 			std::string compare_date;
-
 
 			SendMessage(hwnd, WM_COMMAND, 27, NULL);
 
@@ -1027,6 +1032,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		EndPaint(hwnd, &ps);
 		break;
 	}
+	case WM_CTLCOLORSTATIC:
+	{
+		return (LRESULT)CreateSolidBrush(RGB(255, 255, 255));
+		break;
+	}
 	case WM_LBUTTONDOWN:
 	{
 		LONG s1 = (rectView.bottom - rectView.bottom * 0.05) / 6;
@@ -1208,8 +1218,7 @@ void DrawLine(HDC hdc, RECT rectView)
 
 BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 {
-	char index[4];
-	int index_i;
+	int index = 0;
 	std::string info[5];
 	char str_buff[100];
 	char* tok;
@@ -1224,14 +1233,20 @@ BOOL CALLBACK Dlg_DayHistory(HWND hDlg, UINT iMsg, WPARAM wParam, LPARAM lParam)
 		{
 		case IDDELETE:
 		{
-			GetDlgItemText(hDlg, IDC_EDIT_DELETE_INDEX, index, 4);
-			index_i = std::stoi(index);
-			if (index_i > box_num)
+			index = GetDlgItemInt(hDlg, IDC_EDIT_DELETE_INDEX, NULL, TRUE);
+			
+			if (index == 0)
+			{
+				MessageBox(hDlg, "인덱스를 입력하세요.", "Error", MB_OK);
+				break;
+			}
+
+			if (index > box_num || index < 1)
 			{
 				MessageBox(hDlg, "올바른 인덱스를 입력하세요.", "Error", MB_OK);
 				break;
 			}
-			strcpy(str_buff, complete_day_history[index_i - 1].c_str());
+			strcpy(str_buff, complete_day_history[index - 1].c_str());
 			tok = strtok(str_buff, "|");
 			str_cnt = 0;
 			while (tok != nullptr) {
@@ -1531,7 +1546,7 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
 		SelectObject(hdc, hFont);
 
-		month = std::to_string(selected_month) + "월";
+		month = std::to_string(selected_year) + "년 " + std::to_string(selected_month) + "월";
 
 		SetTextAlign(hdc, TA_LEFT);
 		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, month.c_str(), _tcslen(month.c_str()));
@@ -1579,7 +1594,7 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
 		SelectObject(hdc, hFont);
 
-		month = std::to_string(selected_month) + "월";
+		month = std::to_string(selected_year) + "년 " + std::to_string(selected_month) + "월";
 
 		SetTextAlign(hdc, TA_LEFT);
 		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, month.c_str(), _tcslen(month.c_str()));
@@ -1626,7 +1641,7 @@ LRESULT CALLBACK DrawGraph_Day(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 		hFont = CreateFont(15, 0, 0, 0, FW_NORMAL, 0, 0, 0, HANGEUL_CHARSET, 0, 0, 0, VARIABLE_PITCH | FF_ROMAN, "바탕체");
 		SelectObject(hdc, hFont);
 
-		month = std::to_string(selected_month) + "월";
+		month = std::to_string(selected_year) + "년 " + std::to_string(selected_month) + "월";
 
 		SetTextAlign(hdc, TA_LEFT);
 		TextOut(hdc, rectView.right * 0.4, rectView.bottom * 0.17, month.c_str(), _tcslen(month.c_str()));
